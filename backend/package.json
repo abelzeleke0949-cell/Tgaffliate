@@ -1,0 +1,38 @@
+{
+  "name": "cpa-hub-backend",
+  "version": "1.0.0",
+  "description": "Backend API for CPA Hub Affiliate Marketplace",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/scripts/seed.js",
+    "create-admin": "node src/scripts/createAdmin.js"
+  },
+  "keywords": [
+    "cpa",
+    "affiliate",
+    "telegram",
+    "ethiopia"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2",
+    "mongoose": "^8.10.0",
+    "telegraf": "^4.16.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express-validator": "^7.2.2",
+    "express-rate-limit": "^7.5.0",
+    "express-mongo-sanitize": "^2.2.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
