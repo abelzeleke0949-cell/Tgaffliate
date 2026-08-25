@@ -70,11 +70,8 @@ without it.
 
 Deploys to a Hostinger VPS as three subdomains on `lightb.tech`, fronted by Cloudflare:
 `app.lightb.tech` (brand dashboard), `api.lightb.tech` (backend), `ad.lightb.tech` (admin
-dashboard). See, in order:
-
-1. [`deploy/cloudflare-setup.md`](deploy/cloudflare-setup.md) — DNS records, SSL/TLS mode, Origin CA cert
-2. [`deploy/mongodb-setup.md`](deploy/mongodb-setup.md) — self-hosted, password-protected MongoDB
-3. [`deploy/DEPLOYMENT.md`](deploy/DEPLOYMENT.md) — Node, PM2, Nginx, the rest of the setup
+dashboard). See [`deploy/DEPLOYMENT.md`](deploy/DEPLOYMENT.md) (references
+[`deploy/mongodb-setup.md`](deploy/mongodb-setup.md) at step 7).
 
 ## Known gaps
 
