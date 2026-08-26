@@ -115,6 +115,7 @@ export const listCampaigns = async (req, res) => {
   try {
     const campaigns = await Campaign.find()
       .populate('merchantId', 'businessName email')
+      .populate('productIds', 'name description images price category')
       .select('-__v')
       .sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: campaigns.length, data: campaigns });
@@ -217,7 +218,8 @@ export const listUsers = async (req, res) => {
 export const listSessions = async (req, res) => {
   try {
     const sessions = await Session.find()
-      .populate('campaignId', 'productName cpaReward')
+      .populate('campaignId', 'cpaReward')
+      .populate('productId', 'name')
       .sort({ createdAt: -1 })
       .limit(200);
     res.status(200).json({ success: true, count: sessions.length, data: sessions });

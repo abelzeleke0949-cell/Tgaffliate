@@ -71,9 +71,10 @@ NODE_ENV=production
 MONGODB_URI=<from deploy/mongodb-setup.md step 5 — mongodb://127.0.0.1:27017/cpa-hub if using the no-auth option>
 JWT_SECRET=a2979304b6baca3c370333422dd0e1ddc9441af861b6a1ff19c41176852cac42b7d63894795d9946375e43f7ebf4ccc8
 CORS_ORIGINS=https://app.lightb.tech,https://ad.lightb.tech
-CHAPA_WEBHOOK_SECRET=<random string>
+CHAPA_SECRET_KEY=<real Chapa secret key, from dashboard.chapa.co -> Settings -> API>
 FRONTEND_URL=https://app.lightb.tech
 MINI_APP_URL=https://app.lightb.tech/miniapp
+BACKEND_URL=https://api.lightb.tech
 TELEGRAM_BOT_TOKEN=<from @BotFather>
 TELEGRAM_WEBHOOK_DOMAIN=https://api.lightb.tech
 ```
@@ -94,7 +95,6 @@ cp .env.example .env
 Edit `.env`:
 ```env
 VITE_API_URL=https://api.lightb.tech/api
-VITE_CHAPA_WEBHOOK_SECRET=<same value as backend's CHAPA_WEBHOOK_SECRET>
 ```
 
 ```bash

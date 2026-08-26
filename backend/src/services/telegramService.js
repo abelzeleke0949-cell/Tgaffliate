@@ -60,7 +60,7 @@ export const initializeTelegramBot = () => {
       // If referral parameters exist, create a session
       if (referrerId && campaignId) {
         // Verify campaign exists
-        const campaign = await Campaign.findById(campaignId);
+        const campaign = await Campaign.findById(campaignId).populate('productIds', 'name');
 
         if (campaign && campaign.isActive) {
           // Create a new session
@@ -71,10 +71,12 @@ export const initializeTelegramBot = () => {
             status: 'pending',
           });
 
+          const productNames = campaign.productIds.map((p) => p.name).join(', ');
+
           // Send message with Web App button
           await ctx.reply(
             `🎉 Welcome! You've arrived via a special affiliate link.\n\n` +
-            `Check out this amazing product: *${campaign.productName}*\n\n` +
+            `Check out: *${productNames}*\n\n` +
             `Tap the button below to view and purchase:`,
             {
               parse_mode: 'Markdown',
@@ -186,6 +188,25 @@ export const startTelegramBot = async () => {
   }
 
   try {
+    // Register commands so they show in Telegram's "/" menu popup
+    await bot.telegram.setMyCommands([
+      { command: 'start', description: 'Start the bot and open the Mini App' },
+      { command: 'balance', description: 'Check your earnings balance' },
+      { command: 'help', description: 'Show help' },
+    ]);
+
+    // Persistent menu button (next to the message input) that opens the Mini App directly —
+    // influencers can always get to their status/earnings from there without typing a command.
+    if (process.env.MINI_APP_URL) {
+      await bot.telegram.setChatMenuButton({
+        menuButton: {
+          type: 'web_app',
+          text: 'Open App',
+          web_app: { url: process.env.MINI_APP_URL },
+        },
+      });
+    }
+
     // Use polling for development (for production, use webhooks)
     if (process.env.NODE_ENV === 'production' && process.env.TELEGRAM_WEBHOOK_DOMAIN) {
       // Set webhook for production

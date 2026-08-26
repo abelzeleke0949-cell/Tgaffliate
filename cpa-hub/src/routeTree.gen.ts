@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MiniappRouteImport } from './routes/miniapp'
+import { Route as PurchaseCallbackRouteImport } from './routes/purchase-callback'
 import { Route as WalletCallbackRouteImport } from './routes/wallet-callback'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +30,11 @@ const MiniappRoute = MiniappRouteImport.update({
   path: '/miniapp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PurchaseCallbackRoute = PurchaseCallbackRouteImport.update({
+  id: '/purchase-callback',
+  path: '/purchase-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WalletCallbackRoute = WalletCallbackRouteImport.update({
   id: '/wallet-callback',
   path: '/wallet-callback',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/miniapp': typeof MiniappRoute
+  '/purchase-callback': typeof PurchaseCallbackRoute
   '/wallet-callback': typeof WalletCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/miniapp': typeof MiniappRoute
+  '/purchase-callback': typeof PurchaseCallbackRoute
   '/wallet-callback': typeof WalletCallbackRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,29 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/miniapp': typeof MiniappRoute
+  '/purchase-callback': typeof PurchaseCallbackRoute
   '/wallet-callback': typeof WalletCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/miniapp' | '/wallet-callback'
+  fullPaths:
+    '/' | '/login' | '/miniapp' | '/purchase-callback' | '/wallet-callback'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/miniapp' | '/wallet-callback'
-  id: '__root__' | '/' | '/login' | '/miniapp' | '/wallet-callback'
+  to: '/' | '/login' | '/miniapp' | '/purchase-callback' | '/wallet-callback'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/miniapp'
+    | '/purchase-callback'
+    | '/wallet-callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   MiniappRoute: typeof MiniappRoute
+  PurchaseCallbackRoute: typeof PurchaseCallbackRoute
   WalletCallbackRoute: typeof WalletCallbackRoute
 }
 
@@ -92,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MiniappRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/purchase-callback': {
+      id: '/purchase-callback'
+      path: '/purchase-callback'
+      fullPath: '/purchase-callback'
+      preLoaderRoute: typeof PurchaseCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wallet-callback': {
       id: '/wallet-callback'
       path: '/wallet-callback'
@@ -106,6 +130,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   MiniappRoute: MiniappRoute,
+  PurchaseCallbackRoute: PurchaseCallbackRoute,
   WalletCallbackRoute: WalletCallbackRoute,
 }
 export const routeTree = rootRouteImport

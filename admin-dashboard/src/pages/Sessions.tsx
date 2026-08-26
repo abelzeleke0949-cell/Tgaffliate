@@ -29,7 +29,7 @@ export default function SessionsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-5 py-3 font-medium">Campaign</th>
+                  <th className="px-5 py-3 font-medium">Product</th>
                   <th className="px-5 py-3 font-medium">Buyer</th>
                   <th className="px-5 py-3 font-medium">Referrer</th>
                   <th className="px-5 py-3 font-medium">Status</th>
@@ -40,7 +40,9 @@ export default function SessionsPage() {
                 {(data ?? []).map((s) => (
                   <tr key={s._id} className="border-b border-border last:border-0">
                     <td className="px-5 py-4 font-medium">
-                      {typeof s.campaignId === "object" ? s.campaignId.productName : s.campaignId}
+                      {s.productId && typeof s.productId === "object"
+                        ? s.productId.name
+                        : "(pending — not yet checked out)"}
                     </td>
                     <td className="px-5 py-4 font-mono text-xs">{s.buyerTelegramId}</td>
                     <td className="px-5 py-4 font-mono text-xs">{s.referrerId}</td>

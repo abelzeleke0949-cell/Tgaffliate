@@ -7,22 +7,13 @@ const campaignSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
-  productName: {
-    type: String,
+  productIds: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
     required: true,
-    trim: true,
-  },
-  productDescription: {
-    type: String,
-    required: true,
-  },
-  productImages: {
-    type: [String],
-    default: [],
-  },
-  productPrice: {
-    type: Number,
-    default: 0,
+    validate: {
+      validator: (v) => Array.isArray(v) && v.length > 0,
+      message: 'A campaign must bundle at least one product',
+    },
   },
   totalBudget: {
     type: Number,
@@ -63,7 +54,7 @@ const campaignSchema = new mongoose.Schema({
   },
   endDate: {
     type: Date,
-    default: null,
+    required: true,
   },
 }, {
   timestamps: true,
@@ -81,7 +72,8 @@ campaignSchema.virtual('budgetUsagePercentage').get(function() {
 
 // Method to check if campaign can process a conversion
 campaignSchema.methods.canProcessConversion = function() {
-  return this.isActive && this.budgetRemaining >= this.cpaReward;
+  const notExpired = !this.endDate || this.endDate.getTime() > Date.now();
+  return this.isActive && notExpired && this.budgetRemaining >= this.cpaReward;
 };
 
 // Method to process a conversion

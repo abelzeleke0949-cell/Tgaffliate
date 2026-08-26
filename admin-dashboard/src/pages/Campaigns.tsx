@@ -72,6 +72,7 @@ export default function CampaignsPage() {
                   <th className="px-5 py-3 font-medium">Budget</th>
                   <th className="px-5 py-3 font-medium">CPA Reward</th>
                   <th className="px-5 py-3 font-medium">Sales</th>
+                  <th className="px-5 py-3 font-medium">Ends</th>
                   <th className="px-5 py-3 font-medium">Status</th>
                   <th className="px-5 py-3 text-right font-medium">Action</th>
                 </tr>
@@ -80,26 +81,33 @@ export default function CampaignsPage() {
                 {(data ?? []).map((c) => (
                   <tr key={c._id} className="border-b border-border last:border-0">
                     <td className="px-5 py-4 font-medium">
-                      <div className="flex items-start gap-3">
-                        {c.productImages[0] ? (
-                          <a href={imageUrl(c.productImages[0])} target="_blank" rel="noreferrer">
-                            <img
-                              src={imageUrl(c.productImages[0])}
-                              alt=""
-                              className="size-10 shrink-0 rounded-md object-cover"
-                            />
-                          </a>
-                        ) : (
-                          <div className="size-10 shrink-0 rounded-md bg-muted" />
-                        )}
-                        <div>
-                          <p>{c.productName}</p>
-                          {c.productDescription && (
-                            <p className="mt-0.5 max-w-[18rem] text-xs font-normal text-muted-foreground">
-                              {c.productDescription}
-                            </p>
-                          )}
-                        </div>
+                      <div className="space-y-2">
+                        {c.productIds.map((p) => (
+                          <div key={p._id} className="flex items-start gap-3">
+                            {p.images[0] ? (
+                              <a href={imageUrl(p.images[0])} target="_blank" rel="noreferrer">
+                                <img
+                                  src={imageUrl(p.images[0])}
+                                  alt=""
+                                  className="size-10 shrink-0 rounded-md object-cover"
+                                />
+                              </a>
+                            ) : (
+                              <div className="size-10 shrink-0 rounded-md bg-muted" />
+                            )}
+                            <div>
+                              <p>{p.name}</p>
+                              <p className="text-xs font-normal text-muted-foreground">
+                                {p.category} · {etb(p.price)}
+                              </p>
+                              {p.description && (
+                                <p className="mt-0.5 max-w-[18rem] text-xs font-normal text-muted-foreground">
+                                  {p.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </td>
                     <td className="px-5 py-4 text-muted-foreground">
@@ -110,6 +118,9 @@ export default function CampaignsPage() {
                     </td>
                     <td className="px-5 py-4">{etb(c.cpaReward)}</td>
                     <td className="px-5 py-4">{c.salesGenerated}</td>
+                    <td className="px-5 py-4 text-muted-foreground">
+                      {new Date(c.endDate).toLocaleDateString()}
+                    </td>
                     <td className="px-5 py-4">
                       <StatusBadge campaign={c} />
                       {c.approvalStatus === "rejected" && c.rejectionReason && (

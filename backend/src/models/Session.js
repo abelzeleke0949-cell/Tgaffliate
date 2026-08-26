@@ -17,6 +17,16 @@ const sessionSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  productId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product',
+    default: null,
+  },
+  txRef: {
+    type: String,
+    default: null,
+    index: true,
+  },
   status: {
     type: String,
     enum: ['pending', 'converted', 'expired'],

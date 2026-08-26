@@ -22,12 +22,19 @@ export type Merchant = {
   createdAt: string;
 };
 
+export type Product = {
+  _id: string;
+  name: string;
+  description: string;
+  images: string[];
+  price: number;
+  category: string;
+};
+
 export type Campaign = {
   _id: string;
   merchantId: { _id: string; businessName: string; email: string } | string;
-  productName: string;
-  productDescription: string;
-  productImages: string[];
+  productIds: Product[];
   totalBudget: number;
   budgetRemaining: number;
   cpaReward: number;
@@ -35,6 +42,7 @@ export type Campaign = {
   isActive: boolean;
   approvalStatus: "pending" | "approved" | "rejected";
   rejectionReason: string | null;
+  endDate: string;
   createdAt: string;
 };
 
@@ -52,7 +60,8 @@ export type Session = {
   _id: string;
   buyerTelegramId: string;
   referrerId: string;
-  campaignId: { _id: string; productName: string; cpaReward: number } | string;
+  campaignId: { _id: string; cpaReward: number } | string;
+  productId: { _id: string; name: string } | string | null;
   status: "pending" | "converted" | "expired";
   createdAt: string;
   convertedAt?: string;

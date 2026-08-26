@@ -7,9 +7,9 @@ setup.
 ## Setup
 
 ```bash
-cp .env.example .env   # fill in JWT_SECRET, CHAPA_SECRET_KEY, CHAPA_WEBHOOK_SECRET at minimum
+cp .env.example .env   # fill in JWT_SECRET, CHAPA_SECRET_KEY at minimum
 npm install
-npm run seed            # optional: sample merchant + campaigns
+npm run seed            # optional: sample merchant + products + campaigns
 npm run create-admin    # create an admin login
 npm run dev              # http://localhost:5001
 ```
@@ -39,21 +39,34 @@ Send the JWT as `Authorization: Bearer <token>` on protected routes.
 | POST | `/api/merchant/deposit/initialize` | Merchant | `{ amount }` — starts a real Chapa checkout, returns `{ checkoutUrl }` |
 | GET | `/api/merchant/deposit/verify/:txRef` | Merchant | Re-verifies with Chapa and credits the wallet (idempotent) |
 
-### Campaigns
+### Products (merchant catalog)
 | Method | Path | Access | Description |
 |---|---|---|---|
-| GET | `/api/campaigns?isActive=true` | Public | Active campaigns (used by the Mini App) |
+| POST | `/api/products` | Merchant | Multipart: `name`, `description`, `price`, `category`, `stockQuantity?`, 3-6 `images` |
+| GET | `/api/products/mine/list` | Merchant | The logged-in merchant's own products (any status) |
+| GET | `/api/products/:id` | Public | Single product (used by the Mini App) |
+| PUT | `/api/products/:id` | Merchant (owner) | Update text fields / `isActive` (no re-upload) |
+
+### Campaigns
+Campaigns bundle one or more of a merchant's own products under a shared budget/CPA reward and
+run until `endDate`.
+
+| Method | Path | Access | Description |
+|---|---|---|---|
+| GET | `/api/campaigns?isActive=true` | Public | Active, non-expired campaigns (used by the Mini App) |
 | GET | `/api/campaigns/mine/list` | Merchant | The logged-in merchant's own campaigns (any status) |
-| GET | `/api/campaigns/:id` | Public | Single campaign |
+| GET | `/api/campaigns/:id` | Public | Single campaign, with `productIds` populated |
 | GET | `/api/campaigns/:id/stats` | Public | Budget/conversion stats for one campaign |
-| POST | `/api/campaigns` | Merchant | `{ productName, totalBudget, cpaReward, ... }` — escrows budget |
-| PUT | `/api/campaigns/:id` | Merchant (owner) | Update `isActive` / `productDescription` / `productPrice` |
+| POST | `/api/campaigns` | Merchant | `{ productIds: [...], totalBudget, cpaReward, endDate }` — escrows budget |
+| PUT | `/api/campaigns/:id` | Merchant (owner) | `{ isActive }` — pause/resume (only once approved) |
 
 ### Webhooks
 | Method | Path | Access | Description |
 |---|---|---|---|
-| POST | `/api/webhooks/chapa-mock` | `X-Webhook-Secret` header | `{ buyerTelegramId, campaignId }` — processes a conversion |
 | POST | `/api/webhooks/chapa` | Public (re-verifies server-to-server) | Chapa's payment callback for wallet deposits |
+| POST | `/api/webhooks/purchase/initialize` | Public | `{ buyerTelegramId, campaignId, productId }` — starts a real Chapa checkout for a buyer |
+| POST | `/api/webhooks/purchase/callback` | Public (re-verifies server-to-server) | Chapa's payment callback for buyer purchases |
+| GET | `/api/webhooks/purchase/verify/:txRef` | Public | Re-verifies with Chapa and credits the influencer (idempotent) |
 | POST | `/api/webhooks/track-click` | Public | Optional click analytics |
 
 ### Users (influencers/buyers)
@@ -89,8 +102,7 @@ Commands: `/start` (parses `inf_<telegramId>_camp_<campaignId>` deep links, open
 - `helmet`, per-route rate limiting (`express-rate-limit`), and NoSQL-injection sanitization
   (`express-mongo-sanitize`) are applied globally in `src/server.js`.
 - CORS only allows the origins listed in `CORS_ORIGINS`.
-- The mock Chapa webhook requires an `X-Webhook-Secret` header matching `CHAPA_WEBHOOK_SECRET`,
-  standing in for real payment-gateway signature verification.
-- Real wallet deposits (`/api/merchant/deposit/*`, `/api/webhooks/chapa`) never trust a client
-  redirect or webhook body — every credit is preceded by an independent server-to-server call to
-  Chapa's `/transaction/verify` endpoint using `CHAPA_SECRET_KEY`, and is idempotent per `tx_ref`.
+- Wallet deposits (`/api/merchant/deposit/*`) and buyer purchases (`/api/webhooks/purchase/*`)
+  never trust a client redirect or webhook body — every credit is preceded by an independent
+  server-to-server call to Chapa's `/transaction/verify` endpoint using `CHAPA_SECRET_KEY`, and is
+  idempotent per `tx_ref`.

@@ -18,6 +18,7 @@ import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import merchantRoutes from './routes/merchantRoutes.js';
 import campaignRoutes from './routes/campaignRoutes.js';
+import productRoutes from './routes/productRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 
@@ -96,6 +97,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/merchant', merchantRoutes);
 app.use('/api/campaigns', campaignRoutes);
+app.use('/api/products', productRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/users', userRoutes);
 

@@ -66,13 +66,14 @@ export const getUserEarnings = async (req, res) => {
       referrerId: telegramId,
       status: 'converted',
     })
-      .populate('campaignId', 'productName cpaReward merchantId')
+      .populate('campaignId', 'cpaReward merchantId')
+      .populate('productId', 'name')
       .sort({ convertedAt: -1 })
       .limit(50);
 
     const earnings = convertedSessions.map(session => ({
       sessionId: session._id,
-      productName: session.campaignId?.productName,
+      productName: session.productId?.name,
       reward: session.campaignId?.cpaReward,
       convertedAt: session.convertedAt,
     }));

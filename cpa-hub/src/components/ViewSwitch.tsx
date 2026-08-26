@@ -9,7 +9,8 @@ export function ViewSwitch() {
   return (
     <nav
       aria-label="Switch view"
-      className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full border border-border bg-card/90 p-1 shadow-lg backdrop-blur"
+      className="fixed left-1/2 z-50 -translate-x-1/2 rounded-full border border-border bg-card/90 p-1 shadow-lg backdrop-blur"
+      style={{ top: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
     >
       <Link
         to="/"

@@ -5,27 +5,24 @@ import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
 import { ViewSwitch } from "@/components/ViewSwitch";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/auth";
-import { ApiError, etb, verifyDeposit } from "@/lib/api";
+import { ApiError, verifyPurchase } from "@/lib/api";
 
 const searchSchema = z.object({
   tx_ref: z.string().optional(),
 });
 
-export const Route = createFileRoute("/wallet-callback")({
+export const Route = createFileRoute("/purchase-callback")({
   validateSearch: searchSchema,
   head: () => ({
-    meta: [{ title: "Confirming deposit — Gulit CPA Affiliate Marketplace" }],
+    meta: [{ title: "Confirming purchase — Gulit CPA Affiliate Marketplace" }],
   }),
-  component: WalletCallbackPage,
+  component: PurchaseCallbackPage,
 });
 
-function WalletCallbackPage() {
+function PurchaseCallbackPage() {
   const { tx_ref } = Route.useSearch();
-  const { refresh } = useAuth();
   const [state, setState] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState<string | null>(null);
-  const [balance, setBalance] = useState<number | null>(null);
 
   useEffect(() => {
     if (!tx_ref) {
@@ -36,11 +33,9 @@ function WalletCallbackPage() {
 
     let cancelled = false;
 
-    verifyDeposit(tx_ref)
-      .then(async (data) => {
+    verifyPurchase(tx_ref)
+      .then(() => {
         if (cancelled) return;
-        await refresh();
-        setBalance(data.walletBalance);
         setState("success");
       })
       .catch((err) => {
@@ -69,14 +64,12 @@ function WalletCallbackPage() {
         {state === "success" && (
           <>
             <CheckCircle2 className="mx-auto size-8 text-success" />
-            <p className="mt-4 text-sm font-medium">Deposit confirmed</p>
-            {balance !== null && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                New wallet balance: {etb(balance)}
-              </p>
-            )}
+            <p className="mt-4 text-sm font-medium">Payment confirmed</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Thanks for your purchase — the referring influencer has been credited.
+            </p>
             <Button asChild className="mt-6">
-              <Link to="/">Back to dashboard</Link>
+              <Link to="/miniapp">Back to app</Link>
             </Button>
           </>
         )}
@@ -87,7 +80,7 @@ function WalletCallbackPage() {
             <p className="mt-4 text-sm font-medium">Payment not confirmed</p>
             {message && <p className="mt-1 text-xs text-muted-foreground">{message}</p>}
             <Button asChild variant="outline" className="mt-6">
-              <Link to="/">Back to dashboard</Link>
+              <Link to="/miniapp">Back to app</Link>
             </Button>
           </>
         )}

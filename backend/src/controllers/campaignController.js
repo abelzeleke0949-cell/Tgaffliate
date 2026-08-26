@@ -1,46 +1,39 @@
 import Campaign from '../models/Campaign.js';
-import { deleteUploadedFiles } from '../middleware/upload.js';
+import Product from '../models/Product.js';
 
-// @desc    Create a new campaign for the logged-in merchant
+const PRODUCT_POPULATE = 'name description images price category';
+
+// @desc    Create a new campaign bundling one or more of the merchant's own products
 // @route   POST /api/campaigns
 // @access  Private (merchant)
 export const createCampaign = async (req, res) => {
   try {
-    const { productName, productDescription } = req.body;
-    // multipart/form-data sends every field as a string — cast the numeric ones explicitly
-    // so comparisons below (e.g. totalBudget < cpaReward) are numeric, not lexicographic.
+    const { productIds, endDate } = req.body;
     const totalBudget = Number(req.body.totalBudget);
     const cpaReward = Number(req.body.cpaReward);
-    const productPrice = req.body.productPrice !== undefined ? Number(req.body.productPrice) : 0;
-    const files = req.files || [];
 
-    // Validation
-    if (!productName || !totalBudget || !cpaReward) {
-      deleteUploadedFiles(files);
+    if (!Array.isArray(productIds) || productIds.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Product name, total budget, and CPA reward are required',
+        message: 'At least one product must be selected',
       });
     }
 
-    if (!productDescription || !productDescription.trim()) {
-      deleteUploadedFiles(files);
+    if (!totalBudget || !cpaReward) {
       return res.status(400).json({
         success: false,
-        message: 'A product description is required',
+        message: 'Total budget and CPA reward are required',
       });
     }
 
-    if (files.length < 3) {
-      deleteUploadedFiles(files);
+    if (!endDate || Number.isNaN(new Date(endDate).getTime()) || new Date(endDate) <= new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'At least 3 product images are required',
+        message: 'A valid end date in the future is required',
       });
     }
 
     if (totalBudget <= 0 || cpaReward <= 0) {
-      deleteUploadedFiles(files);
       return res.status(400).json({
         success: false,
         message: 'Total budget and CPA reward must be positive numbers',
@@ -48,7 +41,6 @@ export const createCampaign = async (req, res) => {
     }
 
     if (totalBudget < cpaReward) {
-      deleteUploadedFiles(files);
       return res.status(400).json({
         success: false,
         message: 'Total budget must be at least equal to CPA reward',
@@ -56,11 +48,24 @@ export const createCampaign = async (req, res) => {
     }
 
     const merchant = req.merchant;
-    const merchantId = merchant._id;
+
+    // Every selected product must belong to this merchant and be active
+    const products = await Product.find({ _id: { $in: productIds }, merchantId: merchant._id });
+    if (products.length !== productIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'One or more selected products were not found in your catalog',
+      });
+    }
+    if (products.some((p) => !p.isActive)) {
+      return res.status(400).json({
+        success: false,
+        message: 'All selected products must be active',
+      });
+    }
 
     // Check if merchant has sufficient balance
     if (!merchant.hasSufficientBalance(totalBudget)) {
-      deleteUploadedFiles(files);
       return res.status(400).json({
         success: false,
         message: `Insufficient balance. Available: ${merchant.walletBalance} ETB, Required: ${totalBudget} ETB`,
@@ -72,19 +77,19 @@ export const createCampaign = async (req, res) => {
 
     // Create campaign — stays inactive until an admin approves it
     const campaign = await Campaign.create({
-      merchantId,
-      productName,
-      productDescription: productDescription.trim(),
-      productImages: files.map((file) => `/uploads/campaigns/${file.filename}`),
-      productPrice: productPrice || 0,
+      merchantId: merchant._id,
+      productIds,
       totalBudget,
       budgetRemaining: totalBudget,
       cpaReward,
+      endDate,
       isActive: false,
     });
 
-    // Populate merchant data
-    await campaign.populate('merchantId', 'businessName email');
+    await campaign.populate([
+      { path: 'merchantId', select: 'businessName email' },
+      { path: 'productIds', select: PRODUCT_POPULATE },
+    ]);
 
     res.status(201).json({
       success: true,
@@ -111,10 +116,16 @@ export const getCampaigns = async (req, res) => {
     const filter = {};
     if (isActive !== undefined) {
       filter.isActive = isActive === 'true';
+      // An expired campaign shouldn't show up in the public feed even if isActive
+      // was never manually flipped off yet.
+      if (filter.isActive) {
+        filter.endDate = { $gt: new Date() };
+      }
     }
 
     const campaigns = await Campaign.find(filter)
       .populate('merchantId', 'businessName')
+      .populate('productIds', PRODUCT_POPULATE)
       .select('-__v')
       .sort({ createdAt: -1 });
 
@@ -139,6 +150,7 @@ export const getCampaigns = async (req, res) => {
 export const getMyCampaigns = async (req, res) => {
   try {
     const campaigns = await Campaign.find({ merchantId: req.merchant._id })
+      .populate('productIds', PRODUCT_POPULATE)
       .select('-__v')
       .sort({ createdAt: -1 });
 
@@ -163,7 +175,8 @@ export const getMyCampaigns = async (req, res) => {
 export const getCampaign = async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.id)
-      .populate('merchantId', 'businessName email contactPhone');
+      .populate('merchantId', 'businessName email contactPhone')
+      .populate('productIds', PRODUCT_POPULATE);
 
     if (!campaign) {
       return res.status(404).json({
@@ -191,7 +204,7 @@ export const getCampaign = async (req, res) => {
 // @access  Private (merchant, must own the campaign)
 export const updateCampaign = async (req, res) => {
   try {
-    const { isActive, productDescription, productPrice } = req.body;
+    const { isActive } = req.body;
 
     const campaign = await Campaign.findById(req.params.id);
 
@@ -209,7 +222,6 @@ export const updateCampaign = async (req, res) => {
       });
     }
 
-    // Only allow updating certain fields
     if (isActive !== undefined) {
       if (isActive && campaign.approvalStatus !== 'approved') {
         return res.status(400).json({
@@ -219,8 +231,6 @@ export const updateCampaign = async (req, res) => {
       }
       campaign.isActive = isActive;
     }
-    if (productDescription !== undefined) campaign.productDescription = productDescription;
-    if (productPrice !== undefined) campaign.productPrice = productPrice;
 
     await campaign.save();
 
@@ -255,7 +265,6 @@ export const getCampaignStats = async (req, res) => {
 
     const stats = {
       campaignId: campaign._id,
-      productName: campaign.productName,
       totalBudget: campaign.totalBudget,
       budgetRemaining: campaign.budgetRemaining,
       budgetSpent: campaign.totalBudget - campaign.budgetRemaining,

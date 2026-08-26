@@ -3,7 +3,10 @@ import fs from 'fs';
 import path from 'path';
 import multer from 'multer';
 
-export const uploadDir = path.join(process.cwd(), 'uploads', 'campaigns');
+// Used for product catalog images (the only image upload in the app — campaigns just
+// reference existing products, they don't take their own uploads).
+export const uploadDir = path.join(process.cwd(), 'uploads', 'products');
+export const uploadUrlPrefix = '/uploads/products';
 fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -28,7 +31,7 @@ export const upload = multer({
 });
 
 // Deletes files multer already wrote to disk when a request fails validation
-// after upload but before the campaign is actually created.
+// after upload but before the record is actually created.
 export const deleteUploadedFiles = (files = []) => {
   for (const file of files) {
     fs.unlink(file.path, () => {});
