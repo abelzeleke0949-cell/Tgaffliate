@@ -14,23 +14,20 @@ Dashboard → `lightb.tech` → DNS → Records → Add record (×3, Proxy statu
 
 ## 2. Cloudflare SSL/TLS mode
 
-Dashboard → SSL/TLS → Overview → **Flexible**
+Leave this as whatever the zone is already set to (e.g. Full or Full (strict), if other sites
+on this VPS/zone depend on it). Don't change it — it's a zone-wide setting shared by every
+subdomain on `lightb.tech`, including any other apps already deployed there. If Flash-Bingo (or
+anything else) on `lightb.tech` only redirects HTTP→HTTPS on port 80 without serving real
+content there, switching to Flexible would break it (Cloudflare would talk to origin over plain
+HTTP and just get bounced by that redirect — an infinite redirect loop).
 
-Cloudflare terminates HTTPS for visitors and talks to the VPS over plain HTTP, so no origin
-certificate is needed on the server at all. (Traffic between Cloudflare and the VPS is
-unencrypted — acceptable for most setups, but if that ever matters, switch to Full (strict) with
-a Cloudflare Origin CA certificate instead, and add the `ssl_certificate`/`ssl_certificate_key`
-lines back to the nginx configs in step 4.)
-
-## 3. (skipped — no origin certificate needed in Flexible mode)
-
-## 4. Nginx real-IP restoration
+## 3. Nginx real-IP restoration
 
 ```bash
 sudo cp deploy/nginx/cloudflare-realip.conf /etc/nginx/conf.d/cloudflare-realip.conf
 ```
 
-## 5. Base server setup
+## 4. Base server setup
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -48,11 +45,11 @@ sudo ufw enable
 sudo ss -ltnp | grep -E ':(3001|5001)\s'   # confirm no output
 ```
 
-## 6. MongoDB
+## 5. MongoDB
 
 Follow `deploy/mongodb-setup.md`.
 
-## 7. Get the code onto the server
+## 6. Get the code onto the server
 
 ```bash
 cd /var/www
@@ -61,7 +58,7 @@ cd cpa-hub-platform
 git clone <your-repo-url> .
 ```
 
-## 8. Backend
+## 7. Backend
 
 ```bash
 cd backend
@@ -87,7 +84,7 @@ npm run seed
 npm run create-admin
 ```
 
-## 9. Brand dashboard (cpa-hub)
+## 8. Brand dashboard (cpa-hub)
 
 ```bash
 cd ../cpa-hub
@@ -105,7 +102,7 @@ npm install
 npm run build
 ```
 
-## 10. Admin dashboard
+## 9. Admin dashboard
 
 ```bash
 cd ../admin-dashboard
@@ -124,7 +121,7 @@ sudo mkdir -p /var/www/cpa-hub-admin
 sudo cp -r dist/* /var/www/cpa-hub-admin/
 ```
 
-## 11. PM2
+## 10. PM2
 
 ```bash
 cd /var/www/cpa-hub-platform
@@ -139,7 +136,7 @@ curl http://127.0.0.1:5001/health
 curl http://127.0.0.1:3001
 ```
 
-## 12. Nginx site configs
+## 11. Nginx site configs
 
 ```bash
 sudo cp deploy/nginx/app.conf /etc/nginx/sites-available/app.conf
@@ -150,6 +147,29 @@ sudo ln -s /etc/nginx/sites-available/app.conf /etc/nginx/sites-enabled/
 sudo ln -s /etc/nginx/sites-available/api.conf /etc/nginx/sites-enabled/
 sudo ln -s /etc/nginx/sites-available/ad.conf /etc/nginx/sites-enabled/
 
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+## 12. Origin HTTPS certificate (Certbot)
+
+Since the SSL/TLS mode isn't Flexible (step 2), the origin needs its own valid certificate for
+`app.lightb.tech` / `api.lightb.tech` / `ad.lightb.tech`. Use Certbot (Let's Encrypt) — free,
+automated, and doesn't touch Cloudflare's zone-wide setting at all. Requires step 11 (the plain
+port-80 nginx configs) to already be in place so Certbot can attach to them:
+
+```bash
+which certbot || sudo apt install -y certbot python3-certbot-nginx
+
+sudo certbot --nginx -d app.lightb.tech -d api.lightb.tech -d ad.lightb.tech
+```
+
+This obtains one SAN certificate covering all three subdomains and rewrites
+`/etc/nginx/sites-available/{app,api,ad}.conf` in place to add the SSL block + HTTP→HTTPS
+redirect. After this, don't `cp` the repo's versions of those three files back over the
+server's copies — the repo versions exist for reference/DR, but Certbot's on-server edits are
+the source of truth going forward. Certbot auto-renews via its own systemd timer.
+
+```bash
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
@@ -174,3 +194,6 @@ cd cpa-hub && npm install && npm run build && cd ..
 cd admin-dashboard && npm install && npm run build && sudo cp -r dist/* /var/www/cpa-hub-admin/ && cd ..
 pm2 restart ecosystem.config.cjs --env production
 ```
+
+Note: this does not touch nginx configs — those are Certbot-managed on the server (step 12) and
+shouldn't be overwritten from the repo.
