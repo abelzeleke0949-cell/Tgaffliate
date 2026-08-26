@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
-import { ViewSwitch } from "@/components/ViewSwitch";
 import { Button } from "@/components/ui/button";
 import { ApiError, verifyPurchase } from "@/lib/api";
 
@@ -52,7 +51,6 @@ function PurchaseCallbackPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
-      <ViewSwitch />
       <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 text-center shadow-sm">
         {state === "loading" && (
           <>

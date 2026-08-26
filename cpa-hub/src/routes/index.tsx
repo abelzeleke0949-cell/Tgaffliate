@@ -17,7 +17,6 @@ import {
   Menu,
 } from "lucide-react";
 
-import { ViewSwitch } from "@/components/ViewSwitch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,8 +100,6 @@ function BrandDashboard() {
 
   return (
     <div className="min-h-screen bg-muted/40">
-      <ViewSwitch />
-
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetContent side="left" className="w-64 p-0">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
@@ -201,7 +198,7 @@ function BrandDashboard() {
           </div>
         </aside>
 
-        <main className="flex-1 px-6 py-20 md:py-10">
+        <main className="flex-1 px-6 py-10">
           <div className="mx-auto max-w-5xl">
             {section === "dashboard" && (
               <DashboardSection

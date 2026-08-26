@@ -12,7 +12,6 @@ import {
   Star,
 } from "lucide-react";
 
-import { ViewSwitch } from "@/components/ViewSwitch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -86,8 +85,7 @@ function MiniAppPage() {
   });
 
   return (
-    <div className="min-h-screen bg-muted/40 px-4 pb-10 pt-20">
-      <ViewSwitch />
+    <div className="min-h-screen bg-muted/40 px-4 pb-10 pt-6">
       <div className="mx-auto w-full max-w-[393px]">
         <div className="overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/90 bg-background shadow-2xl">
           <div className="h-[852px] overflow-y-auto">
