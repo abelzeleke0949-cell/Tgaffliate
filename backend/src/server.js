@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -60,6 +61,12 @@ app.use(cors({
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
+}));
+
+// Serve uploaded campaign images. Override helmet's default same-origin CORP so the
+// brand/admin dashboards (different subdomains) can actually load these images.
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+  setHeaders: (res) => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'),
 }));
 
 const globalLimiter = rateLimit({

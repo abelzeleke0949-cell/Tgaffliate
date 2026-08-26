@@ -8,6 +8,7 @@ import {
   getCampaignStats,
 } from '../controllers/campaignController.js';
 import { protectMerchant } from '../middleware/auth.js';
+import { upload } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.get('/:id', getCampaign);
 router.get('/:id/stats', getCampaignStats);
 
 // Private - merchant dashboard
-router.post('/', protectMerchant, createCampaign);
+router.post('/', protectMerchant, upload.array('images', 6), createCampaign);
 router.get('/mine/list', protectMerchant, getMyCampaigns);
 router.put('/:id', protectMerchant, updateCampaign);
 

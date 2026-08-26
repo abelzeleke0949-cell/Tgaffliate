@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
@@ -11,6 +11,8 @@ import {
   Users,
   Megaphone,
   LogOut,
+  ImagePlus,
+  X,
 } from "lucide-react";
 
 import { ViewSwitch } from "@/components/ViewSwitch";
@@ -19,10 +21,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import {
   ApiError,
   createCampaign,
+  imageUrl,
   initializeDeposit,
   etb,
   getMyCampaigns,
@@ -233,7 +237,20 @@ function DashboardSection({
               <tbody>
                 {campaigns.map((c) => (
                   <tr key={c._id} className="border-b border-border last:border-0">
-                    <td className="px-5 py-4 font-medium">{c.productName}</td>
+                    <td className="px-5 py-4 font-medium">
+                      <div className="flex items-center gap-3">
+                        {c.productImages[0] ? (
+                          <img
+                            src={imageUrl(c.productImages[0])}
+                            alt=""
+                            className="size-8 shrink-0 rounded-md object-cover"
+                          />
+                        ) : (
+                          <div className="size-8 shrink-0 rounded-md bg-muted" />
+                        )}
+                        {c.productName}
+                      </div>
+                    </td>
                     <td className="px-5 py-4">
                       <CampaignStatusBadge campaign={c} />
                       {c.approvalStatus === "rejected" && c.rejectionReason && (
@@ -259,21 +276,31 @@ function DashboardSection({
   );
 }
 
+const MIN_PRODUCT_IMAGES = 3;
+const MAX_PRODUCT_IMAGES = 6;
+
 function LaunchSection({ onLaunched }: { onLaunched: () => Promise<void> }) {
   const queryClient = useQueryClient();
   const [productName, setProductName] = useState("");
+  const [description, setDescription] = useState("");
   const [budget, setBudget] = useState("");
   const [reward, setReward] = useState("");
+  const [images, setImages] = useState<File[]>([]);
   const [launched, setLaunched] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const previews = useMemo(() => images.map((file) => URL.createObjectURL(file)), [images]);
+  useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
 
   const launchMutation = useMutation({
     mutationFn: createCampaign,
     onSuccess: async (campaign) => {
       setLaunched(campaign.productName);
       setProductName("");
+      setDescription("");
       setBudget("");
       setReward("");
+      setImages([]);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["campaigns", "mine"] }),
         onLaunched(),
@@ -284,15 +311,29 @@ function LaunchSection({ onLaunched }: { onLaunched: () => Promise<void> }) {
     },
   });
 
+  const addImages = (files: FileList | null) => {
+    if (!files) return;
+    setImages((prev) => [...prev, ...Array.from(files)].slice(0, MAX_PRODUCT_IMAGES));
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const canSubmit =
+    productName && description.trim() && budget && reward && images.length >= MIN_PRODUCT_IMAGES;
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productName || !budget || !reward) return;
+    if (!canSubmit) return;
     setError(null);
     setLaunched(null);
     launchMutation.mutate({
       productName,
+      productDescription: description.trim(),
       totalBudget: Number(budget),
       cpaReward: Number(reward),
+      images,
     });
   };
 
@@ -318,6 +359,54 @@ function LaunchSection({ onLaunched }: { onLaunched: () => Promise<void> }) {
             placeholder="e.g. Habesha Coffee Sampler Box"
           />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="description">Product Description</Label>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="What is it, who's it for, what makes it worth promoting?"
+            rows={3}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="images">
+            Product Images ({images.length}/{MAX_PRODUCT_IMAGES}, at least {MIN_PRODUCT_IMAGES} required)
+          </Label>
+          <Input
+            id="images"
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={images.length >= MAX_PRODUCT_IMAGES}
+            onChange={(e) => {
+              addImages(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          {previews.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {previews.map((src, i) => (
+                <div key={src} className="group relative size-16 overflow-hidden rounded-lg border border-border">
+                  <img src={src} alt="" className="size-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    className="absolute right-0.5 top-0.5 rounded-full bg-background/80 p-0.5 text-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {images.length < MIN_PRODUCT_IMAGES && (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <ImagePlus className="size-3.5" /> {MIN_PRODUCT_IMAGES - images.length} more image
+              {MIN_PRODUCT_IMAGES - images.length === 1 ? "" : "s"} needed
+            </p>
+          )}
+        </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="budget">Total Campaign Budget (ETB)</Label>
@@ -342,7 +431,11 @@ function LaunchSection({ onLaunched }: { onLaunched: () => Promise<void> }) {
             />
           </div>
         </div>
-        <Button type="submit" disabled={launchMutation.isPending} className="w-full sm:w-auto">
+        <Button
+          type="submit"
+          disabled={launchMutation.isPending || !canSubmit}
+          className="w-full sm:w-auto"
+        >
           {launchMutation.isPending ? (
             <>
               <Loader2 className="size-4 animate-spin" /> Launching…

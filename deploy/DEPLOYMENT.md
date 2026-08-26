@@ -196,7 +196,10 @@ pm2 restart ecosystem.config.cjs --env production
 ```
 
 Note: this does not touch nginx configs — those are Certbot-managed on the server (step 12) and
-shouldn't be overwritten from the repo.
+shouldn't be overwritten from the repo. It also doesn't touch `backend/uploads/` (merchant-
+uploaded campaign images) — that directory lives only on the VPS disk (gitignored, untracked) and
+survives `git pull` automatically, but isn't covered by the Mongo backup cron in
+`deploy/mongodb-setup.md`; back it up separately if that matters.
 
 ## 15. CI/CD
 

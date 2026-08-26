@@ -4,6 +4,9 @@ node_modules/
 # Environment variables
 .env
 
+# User-uploaded files (live on the VPS disk only)
+uploads/
+
 # Logs
 logs/
 *.log

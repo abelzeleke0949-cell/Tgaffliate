@@ -1,6 +1,10 @@
 const API_BASE_URL = import.meta.env["VITE_API_URL"] || "http://localhost:5001/api";
 const WEBHOOK_SECRET = import.meta.env["VITE_CHAPA_WEBHOOK_SECRET"] as string | undefined;
 
+// Origin (no /api suffix) that uploaded images are served from
+const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, "");
+export const imageUrl = (path: string) => `${apiOrigin}${path}`;
+
 const TOKEN_KEY = "gulit_cpa_token";
 
 export const getToken = (): string | null => {
@@ -31,7 +35,8 @@ export type Campaign = {
   _id: string;
   merchantId: string | { _id: string; businessName: string };
   productName: string;
-  productDescription?: string;
+  productDescription: string;
+  productImages: string[];
   productPrice?: number;
   totalBudget: number;
   budgetRemaining: number;
@@ -62,8 +67,10 @@ async function request<T>(
   options: RequestInit & { auth?: boolean } = {},
 ): Promise<T> {
   const { auth = false, headers, ...rest } = options;
+  const isFormData = rest.body instanceof FormData;
   const finalHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
+    // Omit Content-Type for FormData — the browser sets its own multipart boundary
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(headers as Record<string, string>),
   };
 
@@ -123,14 +130,24 @@ export const getMyCampaigns = () => request<Campaign[]>("/campaigns/mine/list", 
 
 export const createCampaign = (data: {
   productName: string;
+  productDescription: string;
   totalBudget: number;
   cpaReward: number;
-}) =>
-  request<Campaign>("/campaigns", {
+  images: File[];
+}) => {
+  const formData = new FormData();
+  formData.append("productName", data.productName);
+  formData.append("productDescription", data.productDescription);
+  formData.append("totalBudget", String(data.totalBudget));
+  formData.append("cpaReward", String(data.cpaReward));
+  data.images.forEach((image) => formData.append("images", image));
+
+  return request<Campaign>("/campaigns", {
     method: "POST",
     auth: true,
-    body: JSON.stringify(data),
+    body: formData,
   });
+};
 
 // ---- Conversion webhook (mock Chapa) ----
 

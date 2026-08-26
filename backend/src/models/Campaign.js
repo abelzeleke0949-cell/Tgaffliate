@@ -14,7 +14,11 @@ const campaignSchema = new mongoose.Schema({
   },
   productDescription: {
     type: String,
-    default: '',
+    required: true,
+  },
+  productImages: {
+    type: [String],
+    default: [],
   },
   productPrice: {
     type: Number,

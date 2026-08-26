@@ -1,27 +1,46 @@
 import Campaign from '../models/Campaign.js';
+import { deleteUploadedFiles } from '../middleware/upload.js';
 
 // @desc    Create a new campaign for the logged-in merchant
 // @route   POST /api/campaigns
 // @access  Private (merchant)
 export const createCampaign = async (req, res) => {
   try {
-    const {
-      productName,
-      productDescription,
-      productPrice,
-      totalBudget,
-      cpaReward,
-    } = req.body;
+    const { productName, productDescription } = req.body;
+    // multipart/form-data sends every field as a string — cast the numeric ones explicitly
+    // so comparisons below (e.g. totalBudget < cpaReward) are numeric, not lexicographic.
+    const totalBudget = Number(req.body.totalBudget);
+    const cpaReward = Number(req.body.cpaReward);
+    const productPrice = req.body.productPrice !== undefined ? Number(req.body.productPrice) : 0;
+    const files = req.files || [];
 
     // Validation
     if (!productName || !totalBudget || !cpaReward) {
+      deleteUploadedFiles(files);
       return res.status(400).json({
         success: false,
         message: 'Product name, total budget, and CPA reward are required',
       });
     }
 
+    if (!productDescription || !productDescription.trim()) {
+      deleteUploadedFiles(files);
+      return res.status(400).json({
+        success: false,
+        message: 'A product description is required',
+      });
+    }
+
+    if (files.length < 3) {
+      deleteUploadedFiles(files);
+      return res.status(400).json({
+        success: false,
+        message: 'At least 3 product images are required',
+      });
+    }
+
     if (totalBudget <= 0 || cpaReward <= 0) {
+      deleteUploadedFiles(files);
       return res.status(400).json({
         success: false,
         message: 'Total budget and CPA reward must be positive numbers',
@@ -29,6 +48,7 @@ export const createCampaign = async (req, res) => {
     }
 
     if (totalBudget < cpaReward) {
+      deleteUploadedFiles(files);
       return res.status(400).json({
         success: false,
         message: 'Total budget must be at least equal to CPA reward',
@@ -40,6 +60,7 @@ export const createCampaign = async (req, res) => {
 
     // Check if merchant has sufficient balance
     if (!merchant.hasSufficientBalance(totalBudget)) {
+      deleteUploadedFiles(files);
       return res.status(400).json({
         success: false,
         message: `Insufficient balance. Available: ${merchant.walletBalance} ETB, Required: ${totalBudget} ETB`,
@@ -53,7 +74,8 @@ export const createCampaign = async (req, res) => {
     const campaign = await Campaign.create({
       merchantId,
       productName,
-      productDescription: productDescription || '',
+      productDescription: productDescription.trim(),
+      productImages: files.map((file) => `/uploads/campaigns/${file.filename}`),
       productPrice: productPrice || 0,
       totalBudget,
       budgetRemaining: totalBudget,

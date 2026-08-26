@@ -15,7 +15,14 @@ import {
 
 import { ViewSwitch } from "@/components/ViewSwitch";
 import { Button } from "@/components/ui/button";
-import { ApiError, etb, getActiveCampaigns, processConversion, type Campaign } from "@/lib/api";
+import {
+  ApiError,
+  etb,
+  getActiveCampaigns,
+  imageUrl,
+  processConversion,
+  type Campaign,
+} from "@/lib/api";
 
 const searchSchema = z.object({
   campaignId: z.string().optional(),
@@ -249,9 +256,17 @@ function BuyerMode({
       )}
 
       <article className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="flex h-40 items-center justify-center bg-primary/10">
-          <ShoppingBag className="size-12 text-primary" />
-        </div>
+        {product.productImages[0] ? (
+          <img
+            src={imageUrl(product.productImages[0])}
+            alt={product.productName}
+            className="h-40 w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-40 items-center justify-center bg-primary/10">
+            <ShoppingBag className="size-12 text-primary" />
+          </div>
+        )}
         <div className="space-y-2 p-4">
           <h1 className="text-base font-semibold leading-snug">{product.productName}</h1>
           <p className="flex items-center gap-1 text-xs text-muted-foreground">

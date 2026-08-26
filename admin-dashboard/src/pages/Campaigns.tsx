@@ -2,7 +2,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
 import { Badge, Button, Card } from "@/components/ui";
-import { etb, getCampaigns, setCampaignActive, approveCampaign, rejectCampaign, type Campaign } from "@/lib/api";
+import {
+  etb,
+  getCampaigns,
+  setCampaignActive,
+  approveCampaign,
+  rejectCampaign,
+  imageUrl,
+  type Campaign,
+} from "@/lib/api";
 
 function StatusBadge({ campaign }: { campaign: Campaign }) {
   if (campaign.approvalStatus === "pending") {
@@ -71,7 +79,29 @@ export default function CampaignsPage() {
               <tbody>
                 {(data ?? []).map((c) => (
                   <tr key={c._id} className="border-b border-border last:border-0">
-                    <td className="px-5 py-4 font-medium">{c.productName}</td>
+                    <td className="px-5 py-4 font-medium">
+                      <div className="flex items-start gap-3">
+                        {c.productImages[0] ? (
+                          <a href={imageUrl(c.productImages[0])} target="_blank" rel="noreferrer">
+                            <img
+                              src={imageUrl(c.productImages[0])}
+                              alt=""
+                              className="size-10 shrink-0 rounded-md object-cover"
+                            />
+                          </a>
+                        ) : (
+                          <div className="size-10 shrink-0 rounded-md bg-muted" />
+                        )}
+                        <div>
+                          <p>{c.productName}</p>
+                          {c.productDescription && (
+                            <p className="mt-0.5 max-w-[18rem] text-xs font-normal text-muted-foreground">
+                              {c.productDescription}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
                     <td className="px-5 py-4 text-muted-foreground">
                       {typeof c.merchantId === "object" ? c.merchantId.businessName : c.merchantId}
                     </td>

@@ -1,6 +1,10 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 const TOKEN_KEY = "gulit_cpa_admin_token";
 
+// Origin (no /api suffix) that uploaded images are served from
+const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, "");
+export const imageUrl = (path: string) => `${apiOrigin}${path}`;
+
 export const getToken = (): string | null => window.localStorage.getItem(TOKEN_KEY);
 export const setToken = (token: string) => window.localStorage.setItem(TOKEN_KEY, token);
 export const clearToken = () => window.localStorage.removeItem(TOKEN_KEY);
@@ -22,6 +26,8 @@ export type Campaign = {
   _id: string;
   merchantId: { _id: string; businessName: string; email: string } | string;
   productName: string;
+  productDescription: string;
+  productImages: string[];
   totalBudget: number;
   budgetRemaining: number;
   cpaReward: number;
