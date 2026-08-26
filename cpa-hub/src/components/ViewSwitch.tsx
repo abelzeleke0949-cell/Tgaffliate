@@ -19,11 +19,11 @@ export function ViewSwitch() {
         activeOptions={{ exact: true }}
       >
         <LayoutDashboard className="size-4" />
-        Brand Dashboard
+        <span className="hidden min-[380px]:inline">Brand Dashboard</span>
       </Link>
       <Link to="/miniapp" className={base} activeProps={{ className: active }}>
         <Smartphone className="size-4" />
-        Telegram Mini App
+        <span className="hidden min-[380px]:inline">Telegram Mini App</span>
       </Link>
     </nav>
   );

@@ -14,6 +14,7 @@ import {
   ImagePlus,
   Package,
   X,
+  Menu,
 } from "lucide-react";
 
 import { ViewSwitch } from "@/components/ViewSwitch";
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { CATEGORY_GROUPS } from "@/lib/categories";
 import { useAuth } from "@/lib/auth";
@@ -70,6 +72,12 @@ function BrandDashboard() {
   const { status, merchant, logout, refresh } = useAuth();
   const navigate = useNavigate();
   const [section, setSection] = useState<Section>("dashboard");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navigateAndClose = (s: Section) => {
+    setSection(s);
+    setMobileMenuOpen(false);
+  };
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -94,6 +102,62 @@ function BrandDashboard() {
   return (
     <div className="min-h-screen bg-muted/40">
       <ViewSwitch />
+
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="w-64 p-0">
+          <SheetTitle className="sr-only">Navigation</SheetTitle>
+          <div className="flex h-full flex-col px-4 py-6">
+            <div className="mb-8 flex items-center gap-2 px-2">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <Megaphone className="size-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold leading-tight">Gulit CPA</p>
+                <p className="text-xs text-muted-foreground">{merchant.businessName}</p>
+              </div>
+            </div>
+            <nav className="flex flex-col gap-1">
+              {navItems.map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => navigateAndClose(item.key)}
+                  className={
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors " +
+                    (section === item.key
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground")
+                  }
+                >
+                  <item.icon className="size-4" />
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+            <div className="mt-auto space-y-3">
+              <div className="rounded-xl border border-sidebar-border bg-card p-4">
+                <p className="text-xs text-muted-foreground">Platform Balance</p>
+                <p className="mt-1 text-lg font-semibold">{etb(merchant.walletBalance)}</p>
+              </div>
+              <button
+                onClick={logout}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+              >
+                <LogOut className="size-4" />
+                Sign out
+              </button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <button
+        onClick={() => setMobileMenuOpen(true)}
+        className="fixed left-4 top-4 z-40 flex size-10 items-center justify-center rounded-lg border border-border bg-card shadow-sm md:hidden"
+        aria-label="Open menu"
+      >
+        <Menu className="size-5" />
+      </button>
+
       <div className="flex min-h-screen">
         <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-4 py-6 md:flex">
           <div className="mb-8 flex items-center gap-2 px-2">
@@ -231,56 +295,107 @@ function DashboardSection({
               No campaigns yet — launch your first one to see it here.
             </p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-5 py-3 font-medium">Products</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
-                  <th className="px-5 py-3 font-medium">CPA Reward</th>
-                  <th className="w-[34%] px-5 py-3 font-medium">Budget Remaining</th>
-                  <th className="px-5 py-3 text-right font-medium">Total Sales</th>
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              {/* Desktop table */}
+              <table className="hidden w-full text-sm md:table">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-5 py-3 font-medium">Products</th>
+                    <th className="px-5 py-3 font-medium">Status</th>
+                    <th className="px-5 py-3 font-medium">CPA Reward</th>
+                    <th className="w-[34%] px-5 py-3 font-medium">Budget Remaining</th>
+                    <th className="px-5 py-3 text-right font-medium">Total Sales</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {campaigns.map((c) => {
+                    const firstImage = c.productIds[0]?.images[0];
+                    const title =
+                      c.productIds.map((p) => p.name).join(", ") || "(products unavailable)";
+                    return (
+                      <tr key={c._id} className="border-b border-border last:border-0">
+                        <td className="px-5 py-4 font-medium">
+                          <div className="flex items-center gap-3">
+                            {firstImage ? (
+                              <img
+                                src={imageUrl(firstImage)}
+                                alt=""
+                                className="size-8 shrink-0 rounded-md object-cover"
+                              />
+                            ) : (
+                              <div className="size-8 shrink-0 rounded-md bg-muted" />
+                            )}
+                            <span className="max-w-[16rem] truncate">{title}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <CampaignStatusBadge campaign={c} />
+                          {c.approvalStatus === "rejected" && c.rejectionReason && (
+                            <p className="mt-1 max-w-[14rem] text-xs text-muted-foreground">{c.rejectionReason}</p>
+                          )}
+                        </td>
+                        <td className="px-5 py-4 text-muted-foreground">{etb(c.cpaReward)}</td>
+                        <td className="px-5 py-4">
+                          <Progress value={(c.budgetRemaining / c.totalBudget) * 100} className="h-2" />
+                          <p className="mt-1.5 text-xs text-muted-foreground">
+                            {etb(c.budgetRemaining)} of {etb(c.totalBudget)}
+                          </p>
+                        </td>
+                        <td className="px-5 py-4 text-right font-medium">{c.salesGenerated}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {/* Mobile cards */}
+              <div className="divide-y divide-border md:hidden">
                 {campaigns.map((c) => {
                   const firstImage = c.productIds[0]?.images[0];
                   const title =
                     c.productIds.map((p) => p.name).join(", ") || "(products unavailable)";
                   return (
-                    <tr key={c._id} className="border-b border-border last:border-0">
-                      <td className="px-5 py-4 font-medium">
-                        <div className="flex items-center gap-3">
-                          {firstImage ? (
-                            <img
-                              src={imageUrl(firstImage)}
-                              alt=""
-                              className="size-8 shrink-0 rounded-md object-cover"
-                            />
-                          ) : (
-                            <div className="size-8 shrink-0 rounded-md bg-muted" />
-                          )}
-                          <span className="max-w-[16rem] truncate">{title}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <CampaignStatusBadge campaign={c} />
-                        {c.approvalStatus === "rejected" && c.rejectionReason && (
-                          <p className="mt-1 max-w-[14rem] text-xs text-muted-foreground">{c.rejectionReason}</p>
+                    <div key={c._id} className="space-y-3 px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        {firstImage ? (
+                          <img
+                            src={imageUrl(firstImage)}
+                            alt=""
+                            className="size-10 shrink-0 rounded-md object-cover"
+                          />
+                        ) : (
+                          <div className="size-10 shrink-0 rounded-md bg-muted" />
                         )}
-                      </td>
-                      <td className="px-5 py-4 text-muted-foreground">{etb(c.cpaReward)}</td>
-                      <td className="px-5 py-4">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{title}</p>
+                          <CampaignStatusBadge campaign={c} />
+                          {c.approvalStatus === "rejected" && c.rejectionReason && (
+                            <p className="mt-1 text-xs text-muted-foreground">{c.rejectionReason}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-muted-foreground">CPA Reward</p>
+                          <p className="font-medium">{etb(c.cpaReward)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Total Sales</p>
+                          <p className="font-medium">{c.salesGenerated}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="mb-1 text-xs text-muted-foreground">Budget Remaining</p>
                         <Progress value={(c.budgetRemaining / c.totalBudget) * 100} className="h-2" />
-                        <p className="mt-1.5 text-xs text-muted-foreground">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {etb(c.budgetRemaining)} of {etb(c.totalBudget)}
                         </p>
-                      </td>
-                      <td className="px-5 py-4 text-right font-medium">{c.salesGenerated}</td>
-                    </tr>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
       </section>
@@ -504,24 +619,27 @@ function ProductsSection() {
         ) : (
           <ul className="divide-y divide-border">
             {(productsQuery.data ?? []).map((p) => (
-              <li key={p._id} className="flex items-center gap-3 px-5 py-3">
-                {p.images[0] ? (
-                  <img src={imageUrl(p.images[0])} alt="" className="size-10 shrink-0 rounded-md object-cover" />
-                ) : (
-                  <div className="size-10 shrink-0 rounded-md bg-muted" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {p.category} · {etb(p.price)}
-                    {p.stockQuantity !== null ? ` · ${p.stockQuantity} in stock` : ""}
-                  </p>
+              <li key={p._id} className="flex flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center">
+                <div className="flex items-center gap-3">
+                  {p.images[0] ? (
+                    <img src={imageUrl(p.images[0])} alt="" className="size-10 shrink-0 rounded-md object-cover" />
+                  ) : (
+                    <div className="size-10 shrink-0 rounded-md bg-muted" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {p.category} · {etb(p.price)}
+                      {p.stockQuantity !== null ? ` · ${p.stockQuantity} in stock` : ""}
+                    </p>
+                  </div>
                 </div>
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={toggleActiveMutation.isPending}
                   onClick={() => toggleActiveMutation.mutate({ id: p._id, isActive: !p.isActive })}
+                  className="self-end sm:self-auto"
                 >
                   {p.isActive ? "Deactivate" : "Activate"}
                 </Button>
