@@ -203,4 +203,40 @@ export const verifyPurchase = (txRef: string) =>
     `/webhooks/purchase/verify/${encodeURIComponent(txRef)}`,
   );
 
+// ---- Telegram user (influencer / buyer) ----
+
+export type TelegramUser = {
+  _id: string;
+  telegramId: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  role: "influencer" | "buyer";
+  earningsBalance: number;
+  totalEarnings: number;
+  totalConversions: number;
+  isActive: boolean;
+  stats: {
+    totalClicks: number;
+    totalConversions: number;
+    pendingConversions: number;
+    conversionRate: string;
+  };
+};
+
+export const createOrUpdateTelegramUser = (data: {
+  telegramId: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  role?: "influencer" | "buyer";
+}) =>
+  request<TelegramUser>("/users", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const getTelegramUserProfile = (telegramId: string) =>
+  request<TelegramUser>(`/users/${encodeURIComponent(telegramId)}`);
+
 export const etb = (value: number) => `${value.toLocaleString("en-US")} ETB`;

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import {
@@ -9,7 +9,6 @@ import {
   ShoppingBag,
   Wallet,
   Sparkles,
-  Star,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,8 +19,11 @@ import {
   getActiveCampaigns,
   imageUrl,
   initializePurchase,
+  createOrUpdateTelegramUser,
+  getTelegramUserProfile,
   type Campaign,
   type Product,
+  type TelegramUser,
 } from "@/lib/api";
 
 const searchSchema = z.object({
@@ -68,6 +70,11 @@ function getTelegramUserId(): string | null {
 
 function getTelegramUserName(): string | undefined {
   if (typeof window === "undefined") return undefined;
+  return window.Telegram?.WebApp?.initDataUnsafe?.user?.username;
+}
+
+function getTelegramFirstName(): string | undefined {
+  if (typeof window === "undefined") return undefined;
   return window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name;
 }
 
@@ -77,24 +84,56 @@ function MiniAppPage() {
   const [mode, setMode] = useState<"influencer" | "buyer">(
     arrivedViaReferral ? "buyer" : "influencer",
   );
-  const [earnings] = useState(150);
+
+  const telegramId = getTelegramUserId();
+  const telegramUser = useMemo(
+    () => ({
+      telegramId: telegramId ?? "",
+      username: getTelegramUserName(),
+      firstName: getTelegramFirstName(),
+    }),
+    [],
+  );
+
+  const profileQuery = useQuery({
+    queryKey: ["telegramProfile", telegramUser.telegramId],
+    queryFn: async (): Promise<TelegramUser> => {
+      if (!telegramUser.telegramId) throw new Error("No Telegram user detected");
+      const payload: { telegramId: string; username?: string; firstName?: string } = {
+        telegramId: telegramUser.telegramId,
+      };
+      if (telegramUser.username) payload.username = telegramUser.username;
+      if (telegramUser.firstName) payload.firstName = telegramUser.firstName;
+      await createOrUpdateTelegramUser(payload);
+      return getTelegramUserProfile(telegramUser.telegramId);
+    },
+    enabled: !!telegramUser.telegramId,
+  });
 
   const campaignsQuery = useQuery({
     queryKey: ["campaigns", "active"],
     queryFn: getActiveCampaigns,
   });
 
+  const profile = profileQuery.data;
+  const displayName =
+    profile?.firstName || profile?.username || telegramUser.firstName || telegramUser.username || "User";
+  const initials = displayName.slice(0, 2).toUpperCase();
+
   return (
     <div className="min-h-screen bg-muted/40">
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center gap-4 px-6 py-4">
           <span className="flex size-11 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
-            SB
+            {initials}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">@selam_bekele</p>
+            <p className="truncate text-sm font-semibold">
+              {profile?.username ? `@${profile.username}` : displayName}
+            </p>
             <p className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Wallet className="size-3" /> Earnings Balance: {etb(earnings)}
+              <Wallet className="size-3" /> Earnings Balance:{" "}
+              {profile ? etb(profile.earningsBalance) : "—"}
             </p>
           </div>
         </div>
@@ -118,9 +157,15 @@ function MiniAppPage() {
           ))}
         </div>
 
-        {campaignsQuery.isLoading ? (
+        {campaignsQuery.isLoading || profileQuery.isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : !telegramUser.telegramId ? (
+          <div className="py-20 text-center">
+            <p className="text-sm text-muted-foreground">
+              Open this app from Telegram to continue.
+            </p>
           </div>
         ) : mode === "influencer" ? (
           <InfluencerMode campaigns={campaignsQuery.data ?? []} />
@@ -356,9 +401,6 @@ function BuyerMode({
               {activeProduct.category}
             </Badge>
           </div>
-          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Star className="size-3.5 fill-current text-chart-4" /> 4.8 · 1,204 orders
-          </p>
           {activeProduct.description && (
             <p className="text-sm leading-relaxed text-muted-foreground">{activeProduct.description}</p>
           )}
