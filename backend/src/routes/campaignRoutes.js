@@ -11,14 +11,14 @@ import { protectMerchant } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Private - merchant dashboard (must come before /:id to avoid matching "mine" as an id)
+router.get('/mine/list', protectMerchant, getMyCampaigns);
+router.post('/', protectMerchant, createCampaign);
+router.put('/:id', protectMerchant, updateCampaign);
+
 // Public - used by the Telegram Mini App to browse active campaigns
 router.get('/', getCampaigns);
 router.get('/:id', getCampaign);
 router.get('/:id/stats', getCampaignStats);
-
-// Private - merchant dashboard
-router.post('/', protectMerchant, createCampaign);
-router.get('/mine/list', protectMerchant, getMyCampaigns);
-router.put('/:id', protectMerchant, updateCampaign);
 
 export default router;
