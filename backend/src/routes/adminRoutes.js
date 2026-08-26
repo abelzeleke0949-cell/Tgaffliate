@@ -7,6 +7,8 @@ import {
   updateMerchantStatus,
   listCampaigns,
   updateCampaignStatus,
+  approveCampaign,
+  rejectCampaign,
   listUsers,
   listSessions,
 } from '../controllers/adminController.js';
@@ -30,6 +32,8 @@ router.get('/merchants', listMerchants);
 router.patch('/merchants/:id', updateMerchantStatus);
 router.get('/campaigns', listCampaigns);
 router.patch('/campaigns/:id', updateCampaignStatus);
+router.patch('/campaigns/:id/approve', approveCampaign);
+router.patch('/campaigns/:id/reject', rejectCampaign);
 router.get('/users', listUsers);
 router.get('/sessions', listSessions);
 

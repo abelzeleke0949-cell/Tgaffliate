@@ -88,6 +88,13 @@ merchantSchema.methods.deduct = async function(amount) {
   return await this.save();
 };
 
+// Method to return previously-deducted funds (e.g. a rejected campaign's escrowed budget)
+merchantSchema.methods.refund = async function(amount) {
+  this.walletBalance += amount;
+  this.totalSpent = Math.max(0, this.totalSpent - amount);
+  return await this.save();
+};
+
 const Merchant = mongoose.model('Merchant', merchantSchema);
 
 export default Merchant;

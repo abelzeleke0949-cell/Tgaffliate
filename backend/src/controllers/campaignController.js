@@ -49,7 +49,7 @@ export const createCampaign = async (req, res) => {
     // Deduct budget from merchant wallet (Escrow)
     await merchant.deduct(totalBudget);
 
-    // Create campaign
+    // Create campaign — stays inactive until an admin approves it
     const campaign = await Campaign.create({
       merchantId,
       productName,
@@ -58,7 +58,7 @@ export const createCampaign = async (req, res) => {
       totalBudget,
       budgetRemaining: totalBudget,
       cpaReward,
-      isActive: true,
+      isActive: false,
     });
 
     // Populate merchant data
@@ -66,7 +66,7 @@ export const createCampaign = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Campaign created successfully. Budget has been escrowed.',
+      message: 'Campaign submitted for admin review. Budget has been escrowed.',
       data: campaign,
     });
   } catch (error) {
@@ -188,7 +188,15 @@ export const updateCampaign = async (req, res) => {
     }
 
     // Only allow updating certain fields
-    if (isActive !== undefined) campaign.isActive = isActive;
+    if (isActive !== undefined) {
+      if (isActive && campaign.approvalStatus !== 'approved') {
+        return res.status(400).json({
+          success: false,
+          message: 'Campaign must be approved by an admin before it can be activated',
+        });
+      }
+      campaign.isActive = isActive;
+    }
     if (productDescription !== undefined) campaign.productDescription = productDescription;
     if (productPrice !== undefined) campaign.productPrice = productPrice;
 

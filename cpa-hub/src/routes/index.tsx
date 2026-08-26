@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { ViewSwitch } from "@/components/ViewSwitch";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -164,6 +165,20 @@ function StatCard({
   );
 }
 
+function CampaignStatusBadge({ campaign }: { campaign: Campaign }) {
+  if (campaign.approvalStatus === "pending") {
+    return <Badge variant="secondary">Pending Review</Badge>;
+  }
+  if (campaign.approvalStatus === "rejected") {
+    return <Badge variant="destructive">Rejected</Badge>;
+  }
+  return (
+    <Badge variant="outline" className={campaign.isActive ? "text-success" : "text-muted-foreground"}>
+      {campaign.isActive ? "Live" : "Paused"}
+    </Badge>
+  );
+}
+
 function DashboardSection({
   campaigns,
   loading,
@@ -209,6 +224,7 @@ function DashboardSection({
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-5 py-3 font-medium">Title</th>
+                  <th className="px-5 py-3 font-medium">Status</th>
                   <th className="px-5 py-3 font-medium">CPA Reward</th>
                   <th className="w-[34%] px-5 py-3 font-medium">Budget Remaining</th>
                   <th className="px-5 py-3 text-right font-medium">Total Sales</th>
@@ -218,6 +234,12 @@ function DashboardSection({
                 {campaigns.map((c) => (
                   <tr key={c._id} className="border-b border-border last:border-0">
                     <td className="px-5 py-4 font-medium">{c.productName}</td>
+                    <td className="px-5 py-4">
+                      <CampaignStatusBadge campaign={c} />
+                      {c.approvalStatus === "rejected" && c.rejectionReason && (
+                        <p className="mt-1 max-w-[14rem] text-xs text-muted-foreground">{c.rejectionReason}</p>
+                      )}
+                    </td>
                     <td className="px-5 py-4 text-muted-foreground">{etb(c.cpaReward)}</td>
                     <td className="px-5 py-4">
                       <Progress value={(c.budgetRemaining / c.totalBudget) * 100} className="h-2" />
@@ -279,7 +301,7 @@ function LaunchSection({ onLaunched }: { onLaunched: () => Promise<void> }) {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Launch Campaign</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your budget is held in escrow and released per verified sale.
+          Your budget is held in escrow. Campaigns go live once an admin approves them.
         </p>
       </header>
 
@@ -336,8 +358,8 @@ function LaunchSection({ onLaunched }: { onLaunched: () => Promise<void> }) {
 
         {launched && (
           <p className="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2 text-sm text-success">
-            <CheckCircle2 className="size-4" />"{launched}" is live — influencers can now generate
-            affiliate links.
+            <CheckCircle2 className="size-4" />"{launched}" was submitted for admin review —
+            it'll go live once approved.
           </p>
         )}
       </form>

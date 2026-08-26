@@ -27,6 +27,8 @@ export type Campaign = {
   cpaReward: number;
   salesGenerated: number;
   isActive: boolean;
+  approvalStatus: "pending" | "approved" | "rejected";
+  rejectionReason: string | null;
   createdAt: string;
 };
 
@@ -109,6 +111,13 @@ export const setMerchantActive = (id: string, isActive: boolean) =>
 export const getCampaigns = () => request<Campaign[]>("/admin/campaigns");
 export const setCampaignActive = (id: string, isActive: boolean) =>
   request<Campaign>(`/admin/campaigns/${id}`, { method: "PATCH", body: JSON.stringify({ isActive }) });
+export const approveCampaign = (id: string) =>
+  request<Campaign>(`/admin/campaigns/${id}/approve`, { method: "PATCH" });
+export const rejectCampaign = (id: string, reason?: string) =>
+  request<Campaign>(`/admin/campaigns/${id}/reject`, {
+    method: "PATCH",
+    body: JSON.stringify({ reason }),
+  });
 
 export const getUsers = () => request<PlatformUser[]>("/admin/users");
 export const getSessions = () => request<Session[]>("/admin/sessions");

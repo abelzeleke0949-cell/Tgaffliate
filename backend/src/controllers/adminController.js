@@ -143,6 +143,61 @@ export const updateCampaignStatus = async (req, res) => {
   }
 };
 
+// @desc    Approve a pending campaign, making it live
+// @route   PATCH /api/admin/campaigns/:id/approve
+// @access  Private (admin)
+export const approveCampaign = async (req, res) => {
+  try {
+    const campaign = await Campaign.findById(req.params.id);
+    if (!campaign) {
+      return res.status(404).json({ success: false, message: 'Campaign not found' });
+    }
+    if (campaign.approvalStatus !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Campaign has already been reviewed' });
+    }
+
+    campaign.approvalStatus = 'approved';
+    campaign.isActive = true;
+    await campaign.save();
+
+    res.status(200).json({ success: true, data: campaign });
+  } catch (error) {
+    console.error('Error in approveCampaign:', error);
+    res.status(500).json({ success: false, message: 'Error approving campaign', error: error.message });
+  }
+};
+
+// @desc    Reject a pending campaign and refund its escrowed budget
+// @route   PATCH /api/admin/campaigns/:id/reject
+// @access  Private (admin)
+export const rejectCampaign = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const campaign = await Campaign.findById(req.params.id);
+    if (!campaign) {
+      return res.status(404).json({ success: false, message: 'Campaign not found' });
+    }
+    if (campaign.approvalStatus !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Campaign has already been reviewed' });
+    }
+
+    const merchant = await Merchant.findById(campaign.merchantId);
+    if (merchant) {
+      await merchant.refund(campaign.budgetRemaining);
+    }
+
+    campaign.approvalStatus = 'rejected';
+    campaign.rejectionReason = reason || null;
+    campaign.budgetRemaining = 0;
+    await campaign.save();
+
+    res.status(200).json({ success: true, data: campaign });
+  } catch (error) {
+    console.error('Error in rejectCampaign:', error);
+    res.status(500).json({ success: false, message: 'Error rejecting campaign', error: error.message });
+  }
+};
+
 // @desc    List influencer/buyer users
 // @route   GET /api/admin/users
 // @access  Private (admin)

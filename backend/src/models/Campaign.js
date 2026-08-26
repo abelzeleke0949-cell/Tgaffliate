@@ -44,6 +44,15 @@ const campaignSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  approvalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+  },
+  rejectionReason: {
+    type: String,
+    default: null,
+  },
   startDate: {
     type: Date,
     default: Date.now,

@@ -2,16 +2,45 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
 import { Badge, Button, Card } from "@/components/ui";
-import { etb, getCampaigns, setCampaignActive } from "@/lib/api";
+import { etb, getCampaigns, setCampaignActive, approveCampaign, rejectCampaign, type Campaign } from "@/lib/api";
+
+function StatusBadge({ campaign }: { campaign: Campaign }) {
+  if (campaign.approvalStatus === "pending") {
+    return <Badge tone="muted">Pending Review</Badge>;
+  }
+  if (campaign.approvalStatus === "rejected") {
+    return <Badge tone="destructive">Rejected</Badge>;
+  }
+  return <Badge tone={campaign.isActive ? "success" : "muted"}>{campaign.isActive ? "Active" : "Paused"}</Badge>;
+}
 
 export default function CampaignsPage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["admin", "campaigns"], queryFn: getCampaigns });
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin", "campaigns"] });
+
   const toggle = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => setCampaignActive(id, isActive),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "campaigns"] }),
+    onSuccess: invalidate,
   });
+
+  const approve = useMutation({
+    mutationFn: (id: string) => approveCampaign(id),
+    onSuccess: invalidate,
+  });
+
+  const reject = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) => rejectCampaign(id, reason),
+    onSuccess: invalidate,
+  });
+
+  const handleReject = (id: string) => {
+    const reason = window.prompt("Reason for rejecting this campaign (optional):") ?? undefined;
+    reject.mutate({ id, reason: reason || undefined });
+  };
+
+  const actionsPending = toggle.isPending || approve.isPending || reject.isPending;
 
   return (
     <div className="space-y-8">
@@ -52,17 +81,36 @@ export default function CampaignsPage() {
                     <td className="px-5 py-4">{etb(c.cpaReward)}</td>
                     <td className="px-5 py-4">{c.salesGenerated}</td>
                     <td className="px-5 py-4">
-                      <Badge tone={c.isActive ? "success" : "muted"}>{c.isActive ? "Active" : "Paused"}</Badge>
+                      <StatusBadge campaign={c} />
+                      {c.approvalStatus === "rejected" && c.rejectionReason && (
+                        <p className="mt-1 max-w-[16rem] text-xs text-muted-foreground">{c.rejectionReason}</p>
+                      )}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={toggle.isPending}
-                        onClick={() => toggle.mutate({ id: c._id, isActive: !c.isActive })}
-                      >
-                        {c.isActive ? "Pause" : "Resume"}
-                      </Button>
+                      {c.approvalStatus === "pending" ? (
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" disabled={actionsPending} onClick={() => approve.mutate(c._id)}>
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={actionsPending}
+                            onClick={() => handleReject(c._id)}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      ) : c.approvalStatus === "approved" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={actionsPending}
+                          onClick={() => toggle.mutate({ id: c._id, isActive: !c.isActive })}
+                        >
+                          {c.isActive ? "Pause" : "Resume"}
+                        </Button>
+                      ) : null}
                     </td>
                   </tr>
                 ))}

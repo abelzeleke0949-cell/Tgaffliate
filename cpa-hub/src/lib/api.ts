@@ -38,6 +38,8 @@ export type Campaign = {
   cpaReward: number;
   salesGenerated: number;
   isActive: boolean;
+  approvalStatus: "pending" | "approved" | "rejected";
+  rejectionReason: string | null;
 };
 
 type ApiResponse<T> = {
