@@ -197,3 +197,19 @@ pm2 restart ecosystem.config.cjs --env production
 
 Note: this does not touch nginx configs — those are Certbot-managed on the server (step 12) and
 shouldn't be overwritten from the repo.
+
+## 15. CI/CD
+
+`.github/workflows/deploy.yml` runs step 14's redeploy automatically over SSH on every push to
+`main`. It authenticates with a VPS password (not a private key), stored as encrypted GitHub
+Actions secrets — set these under the repo's **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|---|---|
+| `VPS_HOST` | `186.241.20.75` |
+| `VPS_USER` | the SSH login user (e.g. `root`) |
+| `VPS_SECRET` | that user's SSH password |
+
+GitHub encrypts these at rest and only exposes them to the workflow run — they're never visible
+in logs or to anyone browsing the repo. Once set, every push to `main` deploys automatically; use
+the **Actions** tab to watch runs or trigger one manually (`workflow_dispatch`).

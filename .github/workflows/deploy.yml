@@ -1,0 +1,26 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_SECRET }}
+          script: |
+            set -e
+            cd /var/www/cpa-hub-platform/Tgaffliate
+            git pull
+            cd backend && npm install --omit=dev && cd ..
+            cd cpa-hub && npm install && npm run build && cd ..
+            cd admin-dashboard && npm install && npm run build && sudo cp -r dist/* /var/www/cpa-hub-admin/ && cd ..
+            pm2 restart ecosystem.config.cjs --env production
+            curl -sf http://127.0.0.1:5001/health
