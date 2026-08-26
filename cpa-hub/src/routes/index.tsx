@@ -421,7 +421,7 @@ function ProductsSection() {
 
   const createMutation = useMutation({
     mutationFn: createProduct,
-    onSuccess: async (product) => {
+    onSuccess: (product) => {
       setAdded(product.name);
       setName("");
       setDescription("");
@@ -430,7 +430,7 @@ function ProductsSection() {
       setStockQuantity("");
       setImages([]);
       setError(null);
-      await queryClient.invalidateQueries({ queryKey: ["products", "mine"] });
+      queryClient.invalidateQueries({ queryKey: ["products", "mine"] });
     },
     onError: (err) => {
       setError(err instanceof ApiError ? err.message : "Failed to add product");
@@ -663,13 +663,13 @@ function LaunchSection({ onLaunched }: { onLaunched: () => Promise<void> }) {
 
   const launchMutation = useMutation({
     mutationFn: createCampaign,
-    onSuccess: async () => {
+    onSuccess: () => {
       setLaunched(true);
       setSelected([]);
       setBudget("");
       setReward("");
       setEndDate("");
-      await Promise.all([
+      Promise.all([
         queryClient.invalidateQueries({ queryKey: ["campaigns", "mine"] }),
         onLaunched(),
       ]);
