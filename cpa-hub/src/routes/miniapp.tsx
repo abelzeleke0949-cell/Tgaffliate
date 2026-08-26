@@ -85,62 +85,53 @@ function MiniAppPage() {
   });
 
   return (
-    <div className="min-h-screen bg-muted/40 px-4 pb-10 pt-6">
-      <div className="mx-auto w-full max-w-[393px]">
-        <div className="overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/90 bg-background shadow-2xl">
-          <div className="h-[852px] overflow-y-auto">
-            <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-card/95 px-4 py-3 backdrop-blur">
-              <span className="flex size-10 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
-                SB
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">@selam_bekele</p>
-                <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Wallet className="size-3" /> Earnings Balance: {etb(earnings)}
-                </p>
-              </div>
-            </header>
-
-            <div className="px-4 pt-4">
-              <div className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
-                {(["influencer", "buyer"] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMode(m)}
-                    className={
-                      "rounded-full py-2 text-xs font-semibold capitalize transition-colors " +
-                      (mode === m
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground")
-                    }
-                  >
-                    {m} mode
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="px-4 py-5">
-              {campaignsQuery.isLoading ? (
-                <div className="flex items-center justify-center py-16">
-                  <Loader2 className="size-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : mode === "influencer" ? (
-                <InfluencerMode campaigns={campaignsQuery.data ?? []} />
-              ) : (
-                <BuyerMode
-                  campaigns={campaignsQuery.data ?? []}
-                  campaignId={campaignId}
-                  buyerId={buyerId}
-                  arrivedViaReferral={arrivedViaReferral}
-                />
-              )}
-            </div>
+    <div className="min-h-screen bg-muted/40">
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur">
+        <div className="mx-auto flex max-w-3xl items-center gap-4 px-6 py-4">
+          <span className="flex size-11 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
+            SB
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold">@selam_bekele</p>
+            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Wallet className="size-3" /> Earnings Balance: {etb(earnings)}
+            </p>
           </div>
         </div>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Mini App preview — iPhone Pro viewport (393 × 852)
-        </p>
+      </header>
+
+      <div className="mx-auto max-w-3xl px-6 py-6">
+        <div className="mb-6 grid max-w-xs grid-cols-2 gap-1 rounded-full bg-muted p-1">
+          {(["influencer", "buyer"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={
+                "rounded-full py-2.5 text-sm font-semibold capitalize transition-colors " +
+                (mode === m
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {m} mode
+            </button>
+          ))}
+        </div>
+
+        {campaignsQuery.isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : mode === "influencer" ? (
+          <InfluencerMode campaigns={campaignsQuery.data ?? []} />
+        ) : (
+          <BuyerMode
+            campaigns={campaignsQuery.data ?? []}
+            campaignId={campaignId}
+            buyerId={buyerId}
+            arrivedViaReferral={arrivedViaReferral}
+          />
+        )}
       </div>
     </div>
   );
@@ -152,63 +143,75 @@ function InfluencerMode({ campaigns }: { campaigns: Campaign[] }) {
 
   if (campaigns.length === 0) {
     return (
-      <p className="py-10 text-center text-sm text-muted-foreground">
+      <p className="py-20 text-center text-sm text-muted-foreground">
         No active campaigns to promote right now — check back soon.
       </p>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold tracking-tight">Products to promote</h1>
-        <p className="text-xs text-muted-foreground">Get paid per verified sale, not per click.</p>
+        <h1 className="text-xl font-semibold tracking-tight">Products to promote</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Get paid per verified sale, not per click.</p>
       </div>
 
-      {campaigns.map((c) => {
-        const title = c.productIds.map((p) => p.name).join(", ") || "(products unavailable)";
-        return (
-          <article key={c._id} className="rounded-2xl border border-border bg-card p-4">
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-sm font-semibold leading-snug">{title}</p>
-              <span className="flex items-center gap-1 whitespace-nowrap rounded-full bg-accent px-2 py-1 text-[11px] font-semibold text-accent-foreground">
-                <Sparkles className="size-3" /> {etb(c.cpaReward)}
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">Reward: {etb(c.cpaReward)} per sale</p>
-
-            {links[c._id] ? (
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
-                  <Link2 className="size-3.5 shrink-0 text-primary" />
-                  <code className="truncate text-[11px]">{links[c._id]}</code>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {campaigns.map((c) => {
+          const title = c.productIds.map((p) => p.name).join(", ") || "(products unavailable)";
+          const firstImage = c.productIds[0]?.images[0];
+          return (
+            <article key={c._id} className="overflow-hidden rounded-xl border border-border bg-card">
+              {firstImage ? (
+                <img src={imageUrl(firstImage)} alt="" className="h-36 w-full object-cover" />
+              ) : (
+                <div className="flex h-36 items-center justify-center bg-muted">
+                  <ShoppingBag className="size-8 text-muted-foreground" />
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => navigator.clipboard?.writeText(links[c._id]!)}
-                >
-                  <Copy className="size-3.5" /> Copy link
-                </Button>
+              )}
+              <div className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-semibold leading-snug">{title}</p>
+                  <span className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground">
+                    <Sparkles className="size-3" /> {etb(c.cpaReward)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">Reward: {etb(c.cpaReward)} per sale</p>
+
+                {links[c._id] ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
+                      <Link2 className="size-3.5 shrink-0 text-primary" />
+                      <code className="min-w-0 flex-1 truncate text-xs">{links[c._id]}</code>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => navigator.clipboard?.writeText(links[c._id]!)}
+                    >
+                      <Copy className="size-3.5" /> Copy link
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    onClick={() =>
+                      setLinks((prev) => ({
+                        ...prev,
+                        [c._id]: `t.me/gulitbot?start=inf_${influencerId}_camp_${c._id}`,
+                      }))
+                    }
+                  >
+                    <Link2 className="size-3.5" /> Generate My Affiliate Link
+                  </Button>
+                )}
               </div>
-            ) : (
-              <Button
-                size="sm"
-                className="mt-3 w-full"
-                onClick={() =>
-                  setLinks((prev) => ({
-                    ...prev,
-                    [c._id]: `t.me/gulitbot?start=inf_${influencerId}_camp_${c._id}`,
-                  }))
-                }
-              >
-                <Link2 className="size-3.5" /> Generate My Affiliate Link
-              </Button>
-            )}
-          </article>
-        );
-      })}
+            </article>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -273,24 +276,24 @@ function BuyerMode({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {arrivedViaReferral && (
-        <div className="rounded-full bg-accent px-3 py-1.5 text-center text-[11px] font-medium text-accent-foreground">
+        <div className="rounded-full bg-accent/60 px-4 py-2 text-center text-sm font-medium text-accent-foreground">
           Arrived via an affiliate link
         </div>
       )}
 
       {campaign.productIds.length > 1 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {categories.length > 1 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setCategoryFilter(null)}
                 className={
-                  "rounded-full px-2.5 py-1 text-[11px] font-medium " +
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
                   (categoryFilter === null
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground")
+                    : "bg-muted text-muted-foreground hover:text-foreground")
                 }
               >
                 All
@@ -300,10 +303,10 @@ function BuyerMode({
                   key={cat}
                   onClick={() => setCategoryFilter(cat)}
                   className={
-                    "rounded-full px-2.5 py-1 text-[11px] font-medium " +
+                    "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
                     (categoryFilter === cat
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground")
+                      : "bg-muted text-muted-foreground hover:text-foreground")
                   }
                 >
                   {cat}
@@ -311,20 +314,20 @@ function BuyerMode({
               ))}
             </div>
           )}
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex gap-3 overflow-x-auto pb-1">
             {filteredProducts.map((p) => (
               <button
                 key={p._id}
                 onClick={() => setSelectedProduct(p)}
                 className={
-                  "shrink-0 overflow-hidden rounded-lg border-2 " +
-                  (activeProduct._id === p._id ? "border-primary" : "border-transparent")
+                  "shrink-0 overflow-hidden rounded-xl border-2 transition-colors " +
+                  (activeProduct._id === p._id ? "border-primary" : "border-transparent hover:border-border")
                 }
               >
                 {p.images[0] ? (
-                  <img src={imageUrl(p.images[0])} alt="" className="size-14 object-cover" />
+                  <img src={imageUrl(p.images[0])} alt="" className="size-16 object-cover" />
                 ) : (
-                  <div className="flex size-14 items-center justify-center bg-muted">
+                  <div className="flex size-16 items-center justify-center bg-muted">
                     <ShoppingBag className="size-5 text-muted-foreground" />
                   </div>
                 )}
@@ -334,32 +337,32 @@ function BuyerMode({
         </div>
       )}
 
-      <article className="overflow-hidden rounded-2xl border border-border bg-card">
+      <article className="overflow-hidden rounded-xl border border-border bg-card">
         {activeProduct.images[0] ? (
           <img
             src={imageUrl(activeProduct.images[0])}
             alt={activeProduct.name}
-            className="h-40 w-full object-cover"
+            className="h-52 w-full object-cover"
           />
         ) : (
-          <div className="flex h-40 items-center justify-center bg-primary/10">
+          <div className="flex h-52 items-center justify-center bg-primary/10">
             <ShoppingBag className="size-12 text-primary" />
           </div>
         )}
-        <div className="space-y-2 p-4">
-          <div className="flex items-start justify-between gap-2">
-            <h1 className="text-base font-semibold leading-snug">{activeProduct.name}</h1>
+        <div className="space-y-3 p-5">
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-lg font-semibold leading-snug">{activeProduct.name}</h1>
             <Badge variant="secondary" className="shrink-0">
               {activeProduct.category}
             </Badge>
           </div>
-          <p className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Star className="size-3 fill-current text-chart-4" /> 4.8 · 1,204 orders
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Star className="size-3.5 fill-current text-chart-4" /> 4.8 · 1,204 orders
           </p>
           {activeProduct.description && (
-            <p className="text-sm text-muted-foreground">{activeProduct.description}</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">{activeProduct.description}</p>
           )}
-          <p className="pt-1 text-2xl font-semibold tracking-tight">{etb(activeProduct.price)}</p>
+          <p className="pt-1 text-3xl font-semibold tracking-tight">{etb(activeProduct.price)}</p>
         </div>
       </article>
 
@@ -373,7 +376,7 @@ function BuyerMode({
         )}
       </Button>
 
-      {error && <p className="text-center text-xs text-destructive">{error}</p>}
+      {error && <p className="text-center text-sm text-destructive">{error}</p>}
     </div>
   );
 }
