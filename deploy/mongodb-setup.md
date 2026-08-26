@@ -2,6 +2,16 @@
 
 Assumes Ubuntu 22.04/24.04. Run as a user with sudo access.
 
+**No-auth option:** since the backend connects over `127.0.0.1` on the same VPS, you can skip
+user creation and authorization (steps 2–4) entirely and just keep MongoDB bound to localhost
+with port 27017 never opened in the firewall (step 6). This trades auth for network isolation —
+fine for a single-VPS deployment, but anything that gets code execution on the box then has
+unrestricted DB access. If you're fine with that tradeoff, do steps 1, then skip to step 5 using:
+```env
+MONGODB_URI=mongodb://127.0.0.1:27017/cpa-hub
+```
+then do step 6 (firewall) and step 7 (backups, adjusted to drop `-u`/`-p`/`--authenticationDatabase`).
+
 ## 1. Install MongoDB Community Edition
 
 ```bash
@@ -89,6 +99,13 @@ A simple daily cron dump:
 ```bash
 sudo mkdir -p /var/backups/mongodb
 echo '0 3 * * * root mongodump -u cpaHubApp -p YOUR_APP_PASSWORD --authenticationDatabase cpa-hub --db cpa-hub --out /var/backups/mongodb/$(date +\%F)' | sudo tee /etc/cron.d/mongodb-backup
+```
+
+No-auth variant:
+
+```bash
+sudo mkdir -p /var/backups/mongodb
+echo '0 3 * * * root mongodump --db cpa-hub --out /var/backups/mongodb/$(date +\%F)' | sudo tee /etc/cron.d/mongodb-backup
 ```
 
 Ship those dumps off the VPS periodically (e.g. `rsync` to another machine or object storage) —

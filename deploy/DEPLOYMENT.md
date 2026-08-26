@@ -14,21 +14,15 @@ Dashboard → `lightb.tech` → DNS → Records → Add record (×3, Proxy statu
 
 ## 2. Cloudflare SSL/TLS mode
 
-Dashboard → SSL/TLS → Overview → **Full (strict)**
+Dashboard → SSL/TLS → Overview → **Flexible**
 
-## 3. Cloudflare Origin CA certificate
+Cloudflare terminates HTTPS for visitors and talks to the VPS over plain HTTP, so no origin
+certificate is needed on the server at all. (Traffic between Cloudflare and the VPS is
+unencrypted — acceptable for most setups, but if that ever matters, switch to Full (strict) with
+a Cloudflare Origin CA certificate instead, and add the `ssl_certificate`/`ssl_certificate_key`
+lines back to the nginx configs in step 4.)
 
-Dashboard → SSL/TLS → Origin Server → Create Certificate
-- Hostnames: `*.lightb.tech, lightb.tech`
-- Key type: RSA (2048)
-- Validity: 15 years
-
-```bash
-sudo mkdir -p /etc/ssl/cloudflare
-sudo nano /etc/ssl/cloudflare/lightb.tech.pem   # paste Origin Certificate
-sudo nano /etc/ssl/cloudflare/lightb.tech.key   # paste Private Key
-sudo chmod 600 /etc/ssl/cloudflare/lightb.tech.key
-```
+## 3. (skipped — no origin certificate needed in Flexible mode)
 
 ## 4. Nginx real-IP restoration
 
@@ -77,8 +71,8 @@ cp .env.example .env
 Edit `.env`:
 ```env
 NODE_ENV=production
-MONGODB_URI=<from deploy/mongodb-setup.md step 5>
-JWT_SECRET=<node -e "console.log(require('crypto').randomBytes(48).toString('hex'))">
+MONGODB_URI=<from deploy/mongodb-setup.md step 5 — mongodb://127.0.0.1:27017/cpa-hub if using the no-auth option>
+JWT_SECRET=a2979304b6baca3c370333422dd0e1ddc9441af861b6a1ff19c41176852cac42b7d63894795d9946375e43f7ebf4ccc8
 CORS_ORIGINS=https://app.lightb.tech,https://ad.lightb.tech
 CHAPA_WEBHOOK_SECRET=<random string>
 FRONTEND_URL=https://app.lightb.tech
