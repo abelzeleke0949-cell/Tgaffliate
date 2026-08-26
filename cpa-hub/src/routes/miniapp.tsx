@@ -26,6 +26,11 @@ import {
   type TelegramUser,
 } from "@/lib/api";
 
+// Must match the bot actually registered with BotFather under TELEGRAM_BOT_TOKEN
+// (verify with the Telegram Bot API's getMe) — a mismatch here silently breaks every
+// affiliate link the Mini App generates, since t.me/<wrong-username> resolves to nothing.
+const TELEGRAM_BOT_USERNAME = import.meta.env["VITE_TELEGRAM_BOT_USERNAME"] || "gulitbot";
+
 const searchSchema = z.object({
   campaignId: z.string().optional(),
   buyerId: z.string().optional(),
@@ -56,10 +61,42 @@ declare global {
   interface Window {
     Telegram?: {
       WebApp?: {
+        ready?: () => void;
+        expand?: () => void;
         initDataUnsafe?: { user?: { id: number; username?: string; first_name?: string } };
       };
     };
   }
+}
+
+const TELEGRAM_WEB_APP_SCRIPT_SRC = "https://telegram.org/js/telegram-web-app.js";
+
+// Telegram only populates window.Telegram.WebApp once this SDK script has loaded — it isn't
+// bundled by us, so without it every real user (opened from inside Telegram) would look
+// indistinguishable from someone visiting in a plain browser, and never get past the
+// "Open this app from Telegram to continue" screen.
+function loadTelegramWebAppScript(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (window.Telegram?.WebApp) return Promise.resolve();
+
+  const existing = document.querySelector<HTMLScriptElement>(
+    `script[src="${TELEGRAM_WEB_APP_SCRIPT_SRC}"]`,
+  );
+  if (existing) {
+    return new Promise((resolve) => {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => resolve(), { once: true });
+    });
+  }
+
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = TELEGRAM_WEB_APP_SCRIPT_SRC;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => resolve();
+    document.head.appendChild(script);
+  });
 }
 
 function getTelegramUserId(): string | null {
@@ -93,13 +130,28 @@ function MiniAppPage() {
   const [tgReady, setTgReady] = useState(false);
 
   useEffect(() => {
-    const id = getTelegramUserId();
-    setTgUser({
-      telegramId: id ?? "",
-      username: getTelegramUserName(),
-      firstName: getTelegramFirstName(),
+    let cancelled = false;
+
+    loadTelegramWebAppScript().then(() => {
+      if (cancelled) return;
+
+      // Tells Telegram the app is ready to be displayed and expands it to full height —
+      // required for the Mini App to behave like a native screen instead of a cramped popup.
+      window.Telegram?.WebApp?.ready?.();
+      window.Telegram?.WebApp?.expand?.();
+
+      const id = getTelegramUserId();
+      setTgUser({
+        telegramId: id ?? "",
+        username: getTelegramUserName(),
+        firstName: getTelegramFirstName(),
+      });
+      setTgReady(true);
     });
-    setTgReady(true);
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const profileQuery = useQuery({
@@ -252,7 +304,7 @@ function InfluencerMode({ campaigns }: { campaigns: Campaign[] }) {
                     onClick={() =>
                       setLinks((prev) => ({
                         ...prev,
-                        [c._id]: `t.me/gulitbot?start=inf_${influencerId}_camp_${c._id}`,
+                        [c._id]: `t.me/${TELEGRAM_BOT_USERNAME}?start=inf_${influencerId}_camp_${c._id}`,
                       }))
                     }
                   >
