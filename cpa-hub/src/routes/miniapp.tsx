@@ -85,29 +85,36 @@ function MiniAppPage() {
     arrivedViaReferral ? "buyer" : "influencer",
   );
 
-  const telegramId = getTelegramUserId();
-  const telegramUser = useMemo(
-    () => ({
-      telegramId: telegramId ?? "",
+  const [tgUser, setTgUser] = useState<{
+    telegramId: string;
+    username: string | undefined;
+    firstName: string | undefined;
+  } | null>(null);
+  const [tgReady, setTgReady] = useState(false);
+
+  useEffect(() => {
+    const id = getTelegramUserId();
+    setTgUser({
+      telegramId: id ?? "",
       username: getTelegramUserName(),
       firstName: getTelegramFirstName(),
-    }),
-    [],
-  );
+    });
+    setTgReady(true);
+  }, []);
 
   const profileQuery = useQuery({
-    queryKey: ["telegramProfile", telegramUser.telegramId],
+    queryKey: ["telegramProfile", tgUser?.telegramId],
     queryFn: async (): Promise<TelegramUser> => {
-      if (!telegramUser.telegramId) throw new Error("No Telegram user detected");
+      if (!tgUser?.telegramId) throw new Error("No Telegram user detected");
       const payload: { telegramId: string; username?: string; firstName?: string } = {
-        telegramId: telegramUser.telegramId,
+        telegramId: tgUser.telegramId,
       };
-      if (telegramUser.username) payload.username = telegramUser.username;
-      if (telegramUser.firstName) payload.firstName = telegramUser.firstName;
+      if (tgUser.username) payload.username = tgUser.username;
+      if (tgUser.firstName) payload.firstName = tgUser.firstName;
       await createOrUpdateTelegramUser(payload);
-      return getTelegramUserProfile(telegramUser.telegramId);
+      return getTelegramUserProfile(tgUser.telegramId);
     },
-    enabled: !!telegramUser.telegramId,
+    enabled: tgReady && !!tgUser?.telegramId,
   });
 
   const campaignsQuery = useQuery({
@@ -117,7 +124,7 @@ function MiniAppPage() {
 
   const profile = profileQuery.data;
   const displayName =
-    profile?.firstName || profile?.username || telegramUser.firstName || telegramUser.username || "User";
+    profile?.firstName || profile?.username || tgUser?.firstName || tgUser?.username || "User";
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
@@ -157,11 +164,11 @@ function MiniAppPage() {
           ))}
         </div>
 
-        {campaignsQuery.isLoading || profileQuery.isLoading ? (
+        {campaignsQuery.isLoading || profileQuery.isLoading || !tgReady ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
           </div>
-        ) : !telegramUser.telegramId ? (
+        ) : tgReady && !tgUser?.telegramId ? (
           <div className="py-20 text-center">
             <p className="text-sm text-muted-foreground">
               Open this app from Telegram to continue.
