@@ -1,9 +1,46 @@
+import crypto from 'crypto';
 import Campaign from '../models/Campaign.js';
+import Merchant from '../models/Merchant.js';
+import Transaction from '../models/Transaction.js';
+import { initializeTransaction, verifyTransaction } from '../services/chapaService.js';
 
-// @desc    Deposit funds to the logged-in merchant's wallet
-// @route   POST /api/merchant/deposit
+// Re-verifies a transaction with Chapa and credits the wallet exactly once.
+// Shared by the merchant-facing verify endpoint and the Chapa webhook.
+export const settleTransaction = async (txRef) => {
+  const transaction = await Transaction.findOne({ txRef });
+  if (!transaction) {
+    throw new Error('Transaction not found');
+  }
+
+  if (transaction.status === 'success') {
+    const merchant = await Merchant.findById(transaction.merchantId);
+    return { transaction, merchant };
+  }
+
+  const { status } = await verifyTransaction(txRef);
+
+  if (status !== 'success') {
+    transaction.status = 'failed';
+    await transaction.save();
+    throw new Error('Payment was not successful');
+  }
+
+  const merchant = await Merchant.findById(transaction.merchantId);
+  if (!merchant) {
+    throw new Error('Merchant not found');
+  }
+
+  await merchant.deposit(transaction.amount);
+  transaction.status = 'success';
+  await transaction.save();
+
+  return { transaction, merchant };
+};
+
+// @desc    Start a real Chapa checkout session to top up the merchant's wallet
+// @route   POST /api/merchant/deposit/initialize
 // @access  Private (merchant)
-export const depositFunds = async (req, res) => {
+export const initializeDeposit = async (req, res) => {
   try {
     const { amount } = req.body;
 
@@ -15,24 +52,67 @@ export const depositFunds = async (req, res) => {
     }
 
     const merchant = req.merchant;
-    await merchant.deposit(amount);
+    const txRef = `dep-${merchant._id}-${crypto.randomBytes(6).toString('hex')}`;
+
+    await Transaction.create({
+      merchantId: merchant._id,
+      txRef,
+      amount,
+    });
+
+    const [firstName, ...rest] = merchant.businessName.trim().split(/\s+/);
+
+    const { checkoutUrl } = await initializeTransaction({
+      amount,
+      email: merchant.email,
+      firstName: firstName || 'Merchant',
+      lastName: rest.join(' ') || 'Account',
+      txRef,
+      callbackUrl: `${process.env.BACKEND_URL}/api/webhooks/chapa`,
+      returnUrl: `${process.env.FRONTEND_URL}/wallet-callback?tx_ref=${txRef}`,
+    });
 
     res.status(200).json({
       success: true,
-      message: `Successfully deposited ${amount} ETB`,
+      data: { checkoutUrl, txRef },
+    });
+  } catch (error) {
+    console.error('Error in initializeDeposit:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error starting deposit',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Confirm a Chapa deposit and credit the wallet (idempotent)
+// @route   GET /api/merchant/deposit/verify/:txRef
+// @access  Private (merchant)
+export const verifyDeposit = async (req, res) => {
+  try {
+    const { txRef } = req.params;
+
+    const transaction = await Transaction.findOne({ txRef });
+    if (!transaction || String(transaction.merchantId) !== String(req.merchant._id)) {
+      return res.status(404).json({ success: false, message: 'Transaction not found' });
+    }
+
+    const { merchant } = await settleTransaction(txRef);
+
+    res.status(200).json({
+      success: true,
+      message: 'Deposit confirmed',
       data: {
-        merchantId: merchant._id,
-        businessName: merchant.businessName,
         walletBalance: merchant.walletBalance,
         totalDeposited: merchant.totalDeposited,
       },
     });
   } catch (error) {
-    console.error('Error in depositFunds:', error);
-    res.status(500).json({
+    console.error('Error in verifyDeposit:', error);
+    res.status(400).json({
       success: false,
-      message: 'Error processing deposit',
-      error: error.message,
+      message: error.message || 'Error verifying deposit',
     });
   }
 };

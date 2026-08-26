@@ -2,6 +2,7 @@ import Session from '../models/Session.js';
 import Campaign from '../models/Campaign.js';
 import User from '../models/User.js';
 import { sendTelegramNotification } from '../services/telegramService.js';
+import { settleTransaction } from './merchantController.js';
 
 // @desc    Mock Chapa webhook - Process conversion
 // @route   POST /api/webhooks/chapa-mock
@@ -107,6 +108,26 @@ export const processConversion = async (req, res) => {
       message: 'Error processing conversion',
       error: error.message,
     });
+  }
+};
+
+// @desc    Chapa server-to-server payment webhook — reliable fallback for deposit
+//          confirmation in case the merchant closes the tab before the browser redirect
+// @route   POST /api/webhooks/chapa
+// @access  Public (re-verifies with Chapa server-to-server before crediting anything)
+export const chapaWebhook = async (req, res) => {
+  try {
+    const txRef = req.body.tx_ref;
+    if (!txRef) {
+      return res.status(400).json({ success: false, message: 'tx_ref is required' });
+    }
+
+    await settleTransaction(txRef);
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error in chapaWebhook:', error);
+    res.status(200).json({ success: false, message: error.message });
   }
 };
 

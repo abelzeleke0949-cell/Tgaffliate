@@ -7,7 +7,7 @@ setup.
 ## Setup
 
 ```bash
-cp .env.example .env   # fill in JWT_SECRET, CHAPA_WEBHOOK_SECRET at minimum for local dev
+cp .env.example .env   # fill in JWT_SECRET, CHAPA_SECRET_KEY, CHAPA_WEBHOOK_SECRET at minimum
 npm install
 npm run seed            # optional: sample merchant + campaigns
 npm run create-admin    # create an admin login
@@ -36,7 +36,8 @@ Send the JWT as `Authorization: Bearer <token>` on protected routes.
 | Method | Path | Access | Description |
 |---|---|---|---|
 | GET | `/api/merchant/me` | Merchant | Profile + campaign summary |
-| POST | `/api/merchant/deposit` | Merchant | `{ amount }` — mock Chapa top-up |
+| POST | `/api/merchant/deposit/initialize` | Merchant | `{ amount }` — starts a real Chapa checkout, returns `{ checkoutUrl }` |
+| GET | `/api/merchant/deposit/verify/:txRef` | Merchant | Re-verifies with Chapa and credits the wallet (idempotent) |
 
 ### Campaigns
 | Method | Path | Access | Description |
@@ -52,6 +53,7 @@ Send the JWT as `Authorization: Bearer <token>` on protected routes.
 | Method | Path | Access | Description |
 |---|---|---|---|
 | POST | `/api/webhooks/chapa-mock` | `X-Webhook-Secret` header | `{ buyerTelegramId, campaignId }` — processes a conversion |
+| POST | `/api/webhooks/chapa` | Public (re-verifies server-to-server) | Chapa's payment callback for wallet deposits |
 | POST | `/api/webhooks/track-click` | Public | Optional click analytics |
 
 ### Users (influencers/buyers)
@@ -89,3 +91,6 @@ Commands: `/start` (parses `inf_<telegramId>_camp_<campaignId>` deep links, open
 - CORS only allows the origins listed in `CORS_ORIGINS`.
 - The mock Chapa webhook requires an `X-Webhook-Secret` header matching `CHAPA_WEBHOOK_SECRET`,
   standing in for real payment-gateway signature verification.
+- Real wallet deposits (`/api/merchant/deposit/*`, `/api/webhooks/chapa`) never trust a client
+  redirect or webhook body — every credit is preceded by an independent server-to-server call to
+  Chapa's `/transaction/verify` endpoint using `CHAPA_SECRET_KEY`, and is idempotent per `tx_ref`.

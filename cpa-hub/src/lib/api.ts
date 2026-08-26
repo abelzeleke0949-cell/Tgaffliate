@@ -100,12 +100,18 @@ export const getMe = () => request<Merchant>("/auth/me", { auth: true });
 
 // ---- Merchant wallet ----
 
-export const depositFunds = (amount: number) =>
-  request<{ walletBalance: number; totalDeposited: number }>("/merchant/deposit", {
+export const initializeDeposit = (amount: number) =>
+  request<{ checkoutUrl: string; txRef: string }>("/merchant/deposit/initialize", {
     method: "POST",
     auth: true,
     body: JSON.stringify({ amount }),
   });
+
+export const verifyDeposit = (txRef: string) =>
+  request<{ walletBalance: number; totalDeposited: number }>(
+    `/merchant/deposit/verify/${encodeURIComponent(txRef)}`,
+    { auth: true },
+  );
 
 // ---- Campaigns ----
 

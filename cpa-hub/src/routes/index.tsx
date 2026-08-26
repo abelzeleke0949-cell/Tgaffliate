@@ -22,7 +22,7 @@ import { useAuth } from "@/lib/auth";
 import {
   ApiError,
   createCampaign,
-  depositFunds,
+  initializeDeposit,
   etb,
   getMyCampaigns,
   type Campaign,
@@ -136,9 +136,7 @@ function BrandDashboard() {
               />
             )}
             {section === "launch" && <LaunchSection onLaunched={refresh} />}
-            {section === "wallet" && (
-              <WalletSection balance={merchant.walletBalance} onTopUp={refresh} />
-            )}
+            {section === "wallet" && <WalletSection balance={merchant.walletBalance} />}
           </div>
         </main>
       </div>
@@ -347,17 +345,18 @@ function LaunchSection({ onLaunched }: { onLaunched: () => Promise<void> }) {
   );
 }
 
-function WalletSection({ balance, onTopUp }: { balance: number; onTopUp: () => Promise<void> }) {
+function WalletSection({ balance }: { balance: number }) {
+  const [amount, setAmount] = useState("10000");
   const [error, setError] = useState<string | null>(null);
 
   const topUpMutation = useMutation({
-    mutationFn: () => depositFunds(10000),
-    onSuccess: async () => {
+    mutationFn: () => initializeDeposit(Number(amount)),
+    onSuccess: ({ checkoutUrl }) => {
       setError(null);
-      await onTopUp();
+      window.location.href = checkoutUrl;
     },
     onError: (err) => {
-      setError(err instanceof ApiError ? err.message : "Failed to process top-up");
+      setError(err instanceof ApiError ? err.message : "Failed to start payment");
     },
   });
 
@@ -373,24 +372,36 @@ function WalletSection({ balance, onTopUp }: { balance: number; onTopUp: () => P
       <div className="max-w-xl rounded-xl border border-border bg-card p-6">
         <p className="text-sm text-muted-foreground">Platform Balance</p>
         <p className="mt-1 text-4xl font-semibold tracking-tight">{etb(balance)}</p>
+
+        <div className="mt-6 space-y-2">
+          <Label htmlFor="topUpAmount">Amount (ETB)</Label>
+          <Input
+            id="topUpAmount"
+            type="number"
+            min={1}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+        </div>
+
         <Button
           onClick={() => topUpMutation.mutate()}
-          disabled={topUpMutation.isPending}
-          className="mt-6"
+          disabled={topUpMutation.isPending || !Number(amount)}
+          className="mt-4"
         >
           {topUpMutation.isPending ? (
             <>
-              <Loader2 className="size-4 animate-spin" /> Processing payment…
+              <Loader2 className="size-4 animate-spin" /> Redirecting to Chapa…
             </>
           ) : (
             <>
-              <Wallet className="size-4" /> Top Up Wallet (Mock Chapa)
+              <Wallet className="size-4" /> Top Up Wallet
             </>
           )}
         </Button>
         {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
         <p className="mt-3 text-xs text-muted-foreground">
-          Mock top-up adds 10,000 ETB. Live Chapa checkout will replace this.
+          You'll be redirected to Chapa's test checkout to complete payment.
         </p>
       </div>
     </div>
