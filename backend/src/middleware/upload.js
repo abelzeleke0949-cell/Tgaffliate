@@ -27,7 +27,10 @@ const fileFilter = (req, file, cb) => {
 export const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024, files: 6 },
+  // 5MB was rejecting ordinary phone-camera photos (routinely 6-10MB) with an opaque
+  // "File too large" error — raised to a realistic ceiling. Keep in sync with nginx's
+  // client_max_body_size (deploy/nginx/api.conf) — 6 files x 12MB = 72MB worst case.
+  limits: { fileSize: 12 * 1024 * 1024, files: 6 },
 });
 
 // Deletes files multer already wrote to disk when a request fails validation

@@ -59,7 +59,10 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    return callback(new Error('Not allowed by CORS'));
+    // Reject cleanly (no ACAO header, no CORS error) instead of throwing — an Error here
+    // would fall through to the global error handler as a raw 500, which is indistinguishable
+    // from a real server crash and makes a plain "wrong origin" rejection much harder to diagnose.
+    return callback(null, false);
   },
   credentials: true,
 }));
