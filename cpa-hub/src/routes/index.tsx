@@ -42,13 +42,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Brand Dashboard — Gulit CPA Affiliate Marketplace" },
+      { title: "Brand Dashboard — ለነገ CPA Affiliate Marketplace" },
       {
         name: "description",
         content:
           "Fund your wallet, launch CPA campaigns in ETB, and track affiliate sales from Telegram influencers.",
       },
-      { property: "og:title", content: "Brand Dashboard — Gulit CPA Affiliate Marketplace" },
+      { property: "og:title", content: "Brand Dashboard — ለነገ CPA Affiliate Marketplace" },
       {
         property: "og:description",
         content: "Launch pay-per-sale campaigns and track influencer-driven sales in real time.",
@@ -109,7 +109,7 @@ function BrandDashboard() {
                 <Megaphone className="size-5" />
               </span>
               <div>
-                <p className="text-sm font-semibold leading-tight">Gulit CPA</p>
+                <p className="text-sm font-semibold leading-tight">ለነገ CPA</p>
                 <p className="text-xs text-muted-foreground">{merchant.businessName}</p>
               </div>
             </div>
@@ -162,7 +162,7 @@ function BrandDashboard() {
               <Megaphone className="size-5" />
             </span>
             <div>
-              <p className="text-sm font-semibold leading-tight">Gulit CPA</p>
+              <p className="text-sm font-semibold leading-tight">ለነገ CPA</p>
               <p className="text-xs text-muted-foreground">{merchant.businessName}</p>
             </div>
           </div>

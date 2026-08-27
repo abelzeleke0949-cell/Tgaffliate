@@ -13,7 +13,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/purchase-callback")({
   validateSearch: searchSchema,
   head: () => ({
-    meta: [{ title: "Confirming purchase — Gulit CPA Affiliate Marketplace" }],
+    meta: [{ title: "Confirming purchase — ለነገ CPA Affiliate Marketplace" }],
   }),
   component: PurchaseCallbackPage,
 });

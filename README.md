@@ -1,4 +1,4 @@
-# Gulit CPA — Affiliate Marketplace
+# ለነገ CPA — Affiliate Marketplace
 
 A Cost-Per-Action (CPA) affiliate marketplace for the Ethiopian market: brands fund a wallet,
 launch pay-per-sale campaigns in ETB, and Telegram influencers earn a commission for every

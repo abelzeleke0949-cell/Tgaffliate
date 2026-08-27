@@ -1,4 +1,4 @@
-# Gulit CPA — Backend API
+# ለነገ CPA — Backend API
 
 Node.js + Express + MongoDB (Mongoose) + Telegraf. See the root [`README.md`](../README.md) for
 the full project overview and [`../deploy/DEPLOYMENT.md`](../deploy/DEPLOYMENT.md) for production

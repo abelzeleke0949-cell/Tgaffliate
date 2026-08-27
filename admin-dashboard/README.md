@@ -1,6 +1,6 @@
-# Gulit CPA — Admin Dashboard
+# ለነገ CPA — Admin Dashboard
 
-Internal admin console for the Gulit CPA platform. A separate, lightweight React SPA (Vite, no
+Internal admin console for the ለነገ CPA platform. A separate, lightweight React SPA (Vite, no
 SSR) that talks to the same backend REST API as `cpa-hub`, using its own `/api/admin/*` routes and
 its own admin login (created via `backend/npm run create-admin` — there is no public signup).
 

@@ -22,7 +22,7 @@ export default function Layout() {
             <ShieldCheck className="size-5" />
           </span>
           <div>
-            <p className="text-sm font-semibold leading-tight">Gulit CPA</p>
+            <p className="text-sm font-semibold leading-tight">ለነገ CPA</p>
             <p className="text-xs text-muted-foreground">Admin console</p>
           </div>
         </div>

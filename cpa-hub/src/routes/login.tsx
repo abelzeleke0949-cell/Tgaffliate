@@ -11,7 +11,7 @@ import { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [{ title: "Sign in — Gulit CPA Affiliate Marketplace" }],
+    meta: [{ title: "Sign in — ለነገ CPA Affiliate Marketplace" }],
   }),
   component: LoginPage,
 });
@@ -58,7 +58,7 @@ function LoginPage() {
             <Megaphone className="size-5" />
           </span>
           <div>
-            <p className="text-sm font-semibold leading-tight">Gulit CPA</p>
+            <p className="text-sm font-semibold leading-tight">ለነገ CPA</p>
             <p className="text-xs text-muted-foreground">Brand workspace</p>
           </div>
         </div>

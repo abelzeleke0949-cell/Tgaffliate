@@ -14,7 +14,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/wallet-callback")({
   validateSearch: searchSchema,
   head: () => ({
-    meta: [{ title: "Confirming deposit — Gulit CPA Affiliate Marketplace" }],
+    meta: [{ title: "Confirming deposit — ለነገ CPA Affiliate Marketplace" }],
   }),
   component: WalletCallbackPage,
 });

@@ -23,7 +23,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Platform Overview</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Live snapshot across every merchant on Gulit CPA.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Live snapshot across every merchant on ለነገ CPA.</p>
       </header>
 
       {isLoading || !data ? (

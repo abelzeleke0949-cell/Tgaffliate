@@ -29,7 +29,7 @@ import {
 // Must match the bot actually registered with BotFather under TELEGRAM_BOT_TOKEN
 // (verify with the Telegram Bot API's getMe) — a mismatch here silently breaks every
 // affiliate link the Mini App generates, since t.me/<wrong-username> resolves to nothing.
-const TELEGRAM_BOT_USERNAME = import.meta.env["VITE_TELEGRAM_BOT_USERNAME"] || "gulitbot";
+const TELEGRAM_BOT_USERNAME = import.meta.env["VITE_TELEGRAM_BOT_USERNAME"] || "Lenege_bot";
 
 const searchSchema = z.object({
   campaignId: z.string().optional(),

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  Gulit CPA — VPS Deployment Script (Shared Server Safe)
+#  ለነገ CPA — VPS Deployment Script (Shared Server Safe)
 #  Steps: 5, 7–13  (Cloudflare DNS/SSL, real-IP, MongoDB skipped)
 #
 #  IMPORTANT: This server hosts other projects.
@@ -34,7 +34,7 @@ DEPLOY_DIR="/var/www/cpa-hub-platform"
 ADMIN_DIR="/var/www/cpa-hub-admin"
 
 echo "=========================================="
-echo "  Gulit CPA Deployment — Starting"
+echo "  ለነገ CPA Deployment — Starting"
 echo "  (safe for other projects on this VPS)"
 echo "=========================================="
 
